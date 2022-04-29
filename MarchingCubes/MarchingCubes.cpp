@@ -318,7 +318,7 @@ void MarchingCubes::exportObj( string fileName ){
 	
 	//write file
 	string title = fileName;
-	fileName = "../output/" + title + ".obj";
+	fileName = /*"../output/" +*/ title + ".obj";
 	char *fn = (char*)fileName.c_str();
 	
 	ofstream outfile (fn);
