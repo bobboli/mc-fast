@@ -9,7 +9,7 @@
 #include <time.h>
 
 #define NUM_RUNS 10
-#define CYCLES_REQUIRED 1e9
+#define CYCLES_REQUIRED 1e8
 #define FREQUENCY 2.8e9
 #define CALIBRATE
 
@@ -129,7 +129,7 @@ void SetSphere(MarchingCubes& mc)
 
 int main(int argc, char** argv)
 {
-    if (argc != 3) { printf("usage: res, threshold \n"); return -1; }
+    if (argc != 3) { printf("usage: <res> <threshold> \n"); return -1; }
     int res = atoi(argv[1]);
     float radius = atof(argv[2]);
     printf("resolution=%d, \n", res);
@@ -157,7 +157,7 @@ int main(int argc, char** argv)
     QueryPerformanceFrequency((LARGE_INTEGER*)&f);
 
     double p = queryperfcounter(mc_s, radius, f);
-    printf("Windows QueryPerformanceCounter()  %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p / f.QuadPart, p / f.QuadPart * FREQUENCY);
+    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p / f.QuadPart, p / f.QuadPart * FREQUENCY);
     
     mc_s.exportObj("Sphere_smoothed");
 
