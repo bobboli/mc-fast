@@ -42,8 +42,9 @@ void MarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 }
 
 void MarchingCubes::update(float _threshold){
+	// update every time
 	
-	if( bUpdateMesh || threshold != _threshold ){
+	//if( bUpdateMesh || threshold != _threshold ){
 			
 		threshold = _threshold;
 		
@@ -64,8 +65,8 @@ void MarchingCubes::update(float _threshold){
 		//vbo.updateVertexData( &vertices[0], vertexCount );
 		//vbo.updateNormalData( &normals[0], vertexCount );
 		
-		bUpdateMesh = false;
-	}
+	/*	bUpdateMesh = false;
+	}*/
 }
 
 //void ofxMarchingCubes::draw( GLenum renderType )

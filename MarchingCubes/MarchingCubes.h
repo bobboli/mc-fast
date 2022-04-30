@@ -29,6 +29,14 @@ TODO::
 
 using namespace std;
 
+enum MarchingCubesStage
+{
+	ALL,
+	STAGE1,
+	STAGE2,
+	STAGE3,
+};
+
 class MarchingCubes{
 public:
 	MarchingCubes();
