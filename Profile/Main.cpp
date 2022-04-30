@@ -127,20 +127,24 @@ void SetSphere(MarchingCubes& mc)
 	}
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    if (argc != 3) { printf("usage: res, threshold \n"); return -1; }
+    int res = atoi(argv[1]);
+    float radius = atof(argv[2]);
+    printf("resolution=%d, \n", res);
     // 1. baseline result
     MarchingCubes mc;
-    mc.setup(100, 100, 100);
+    mc.setup(res, res, res);
     SetSphere(mc);
-    const float radius = 0.4;
+    //const float radius = 0.4;
     mc.update(radius);
     mc.exportObj("Sphere");
 
     
     // 2. timing
     MarchingCubes mc_s;
-    mc_s.setup(100, 100, 100);
+    mc_s.setup(res, res, res);
     SetSphere(mc_s);
 
     double c = c_clock(mc_s, radius);
