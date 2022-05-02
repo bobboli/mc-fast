@@ -291,21 +291,21 @@ void MarchingCubes::vertexInterp_count_ops(float threshold, int i1, int j1, int 
 	float& iso1 = getIsoValue(i1, j1, k1);
 	float& iso2 = getIsoValue(i2, j2, k2);
 
-	// 3 float adds, 1 fabs, 1 fcmp
+	// 1 float add, 1 fabs, 1 fcmp
 	counts.fl_cmp += 1;
-	counts.fl_add += 3;
+	counts.fl_add += 1;
 	counts.fl_abs += 1;
 	if (abs(threshold - iso1) < 0.00001) {
 		return;
 	}
 	counts.fl_cmp += 1;
-	counts.fl_add += 3;
+	counts.fl_add += 1;
 	counts.fl_abs += 1;
 	if (abs(threshold - iso2) < 0.00001) {
 		return;
 	}
 	counts.fl_cmp += 1;
-	counts.fl_add += 3;
+	counts.fl_add += 1;
 	counts.fl_abs += 1;
 	if (abs(iso1 - iso2) < 0.00001) {
 		return;
