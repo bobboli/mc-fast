@@ -37,6 +37,38 @@ enum MarchingCubesStage
 	STAGE3,
 };
 
+class operation_counts
+{
+public:
+	int fl_cmp;
+	int fl_add;
+	int fl_mul;
+	int fl_div;
+	int fl_abs;
+	int empty_cells;
+
+	operation_counts() {
+		fl_cmp = 0;
+		fl_add = 0;
+		fl_mul = 0;
+		fl_div = 0;
+		fl_abs = 0;
+		empty_cells = 0;
+	}
+
+	void print()
+	{
+		printf("floating point cmp: %d, \nadd: %d,\nmul: %d,\ndiv: %d,\nfabs: %d,\ntotal number of flops: %d\n",
+			fl_cmp,
+			fl_add,
+			fl_mul,
+			fl_div,
+			fl_abs, 
+			fl_cmp+fl_add+fl_mul+fl_div+fl_abs);
+		printf("total number of empty cells: %d", empty_cells);
+	}
+};
+
 class MarchingCubes{
 public:
 	MarchingCubes();
@@ -44,9 +76,10 @@ public:
 	
 	void setMaxVertexCount( int _maxVertexCount = 100000 );
 	
-	void setup( int resX=30, int resY=20, int resZ=30, int _maxVertexCount=150000);
+	void setup( int resX=30, int resY=20, int resZ=30, int _maxVertexCount=200000);
 	void update(){		update( threshold );}
 	void update(float _threshold);
+	void count_ops(float _threshold, operation_counts& counts);
 	
 	//void draw( GLenum renderType = GL_TRIANGLES );
 	//void drawWireframe();
@@ -56,8 +89,10 @@ public:
 	void flipNormals(){	flipNormalsValue *= -1;}
 	void setResolution( int _x=10, int _y=10, int _z=10 );
 	void polygonise( int i, int j, int k );
+	void polygonise_count_ops( int i, int j, int k, operation_counts& counts);
 	void computeNormal( int i, int j, int k );
 	void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n);
+	void vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts& counts);
 	
 	void setIsoValue( int x, int y, int z, float value);
 	void addToIsoValue( int x, int y, int z, float value){

@@ -120,6 +120,7 @@ void SetSphere(MarchingCubes& mc)
 			for (int k = 0; k < mc.resZ; k++)
 			{
 				float val = (i - cX) * (i - cX) + (j - cY) * (j - cY) + (k - cZ) * (k - cZ);
+                val = sqrt(val);
 				val *= scale;
 				mc.setIsoValue(i, j, k, val);
 			}
@@ -129,7 +130,7 @@ void SetSphere(MarchingCubes& mc)
 
 int main(int argc, char** argv)
 {
-    if (argc != 3) { printf("usage: <res> <threshold> \n"); return -1; }
+    if (argc != 3) { printf("usage: <res> <threshold>. \n"); return -1; }
     int res = atoi(argv[1]);
     float radius = atof(argv[2]);
     printf("resolution=%d, \n", res);
@@ -146,7 +147,6 @@ int main(int argc, char** argv)
     MarchingCubes mc_s;
     mc_s.setup(res, res, res);
     SetSphere(mc_s);
-
     double c = c_clock(mc_s, radius);
     printf("C clock() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY. \n\n", c / CLOCKS_PER_SEC, c / CLOCKS_PER_SEC * FREQUENCY);
 
@@ -160,6 +160,11 @@ int main(int argc, char** argv)
     printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p / f.QuadPart, p / f.QuadPart * FREQUENCY);
     
     mc_s.exportObj("Sphere_smoothed");
+
+    // 3. count floating point operations
+    operation_counts counts;
+    mc_s.count_ops(radius, counts);
+    counts.print();
 
 	return 0;
 }

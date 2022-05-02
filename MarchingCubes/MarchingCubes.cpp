@@ -69,6 +69,19 @@ void MarchingCubes::update(float _threshold){
 	}*/
 }
 
+void MarchingCubes::count_ops(float _threshold, operation_counts& counts) {
+	threshold = _threshold;
+
+	vertexCount = 0;
+	for (int x = 0; x < resX; x++) {
+		for (int y = 0; y < resY; y++) {
+			for (int z = 0; z < resZ; z++) {
+				polygonise_count_ops(x, y, z, counts);
+			}
+		}
+	}
+}
+
 //void ofxMarchingCubes::draw( GLenum renderType )
 //{
 //	ofPushMatrix();
@@ -146,6 +159,57 @@ void MarchingCubes::polygonise( int i, int j, int k ){
 	}
 }
 
+void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& counts) {
+
+	if (vertexCount + 3 < maxVertexCount) {
+		int cubeindex = 0;
+		int i1 = min(i + 1, resXm1), j1 = min(j + 1, resYm1), k1 = min(k + 1, resZm1);
+		cubeindex |= getIsoValue(i, j, k) > threshold ? 1 : 0;
+		cubeindex |= getIsoValue(i1, j, k) > threshold ? 2 : 0;
+		cubeindex |= getIsoValue(i1, j1, k) > threshold ? 4 : 0;
+		cubeindex |= getIsoValue(i, j1, k) > threshold ? 8 : 0;
+		cubeindex |= getIsoValue(i, j, k1) > threshold ? 16 : 0;
+		cubeindex |= getIsoValue(i1, j, k1) > threshold ? 32 : 0;
+		cubeindex |= getIsoValue(i1, j1, k1) > threshold ? 64 : 0;
+		cubeindex |= getIsoValue(i, j1, k1) > threshold ? 128 : 0;
+		// 8 float cmps
+		counts.fl_cmp += 8;
+
+		if (edgeTable[cubeindex] == 0)
+		{
+			counts.empty_cells += 1;
+			return;
+		}
+
+		if (edgeTable[cubeindex] & 1)		vertexInterp_count_ops(threshold, i, j, k, i1, j, k, counts);
+		if (edgeTable[cubeindex] & 2)		vertexInterp_count_ops(threshold, i1, j, k, i1, j1, k, counts);
+		if (edgeTable[cubeindex] & 4)		vertexInterp_count_ops(threshold, i1, j1, k, i, j1, k, counts);
+		if (edgeTable[cubeindex] & 8)		vertexInterp_count_ops(threshold, i, j1, k, i, j, k, counts);
+		if (edgeTable[cubeindex] & 16)		vertexInterp_count_ops(threshold, i, j, k1, i1, j, k1, counts);
+		if (edgeTable[cubeindex] & 32)		vertexInterp_count_ops(threshold, i1, j, k1, i1, j1, k1, counts);
+		if (edgeTable[cubeindex] & 64)		vertexInterp_count_ops(threshold, i1, j1, k1, i, j1, k1, counts);
+		if (edgeTable[cubeindex] & 128)		vertexInterp_count_ops(threshold, i, j1, k1, i, j, k1, counts);
+		if (edgeTable[cubeindex] & 256)		vertexInterp_count_ops(threshold, i, j, k, i, j, k1, counts);
+		if (edgeTable[cubeindex] & 512)		vertexInterp_count_ops(threshold, i1, j, k, i1, j, k1, counts);
+		if (edgeTable[cubeindex] & 1024)	vertexInterp_count_ops(threshold, i1, j1, k, i1, j1, k1, counts);
+		if (edgeTable[cubeindex] & 2048)	vertexInterp_count_ops(threshold, i, j1, k, i, j1, k1, counts);
+
+		for (i = 0; triTable[cubeindex][i] != -1; i += 3) {
+			// 6 float adds
+			// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
+			// Vector3f b = vertList[triTable[cubeindex][i + 2]] - vertList[triTable[cubeindex][i + 1]];
+
+			counts.fl_add += 6;
+
+			/*vertices[vertexCount] = vertList[triTable[cubeindex][i]];
+			vertices[vertexCount + 1] = vertList[triTable[cubeindex][i + 1]];
+			vertices[vertexCount + 2] = vertList[triTable[cubeindex][i + 2]];*/
+
+			vertexCount += 3;
+		}
+	}
+}
+
 void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n){
 	
 	Vector3f& p1 = getGridPoint(i1,j1,k1);
@@ -216,7 +280,43 @@ void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2
 	}
 			
 	//lerp
-	v = p1 + (p2-p1) * (threshold - iso1) / (iso2 - iso1);
+	v = p1 + (p2-p1) * ((threshold - iso1) / (iso2 - iso1));
+}
+
+void MarchingCubes::vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts& counts) {
+
+	Vector3f& p1 = getGridPoint(i1, j1, k1);
+	Vector3f& p2 = getGridPoint(i2, j2, k2);
+
+	float& iso1 = getIsoValue(i1, j1, k1);
+	float& iso2 = getIsoValue(i2, j2, k2);
+
+	// 3 float adds, 1 fabs, 1 fcmp
+	counts.fl_cmp += 1;
+	counts.fl_add += 3;
+	counts.fl_abs += 1;
+	if (abs(threshold - iso1) < 0.00001) {
+		return;
+	}
+	counts.fl_cmp += 1;
+	counts.fl_add += 3;
+	counts.fl_abs += 1;
+	if (abs(threshold - iso2) < 0.00001) {
+		return;
+	}
+	counts.fl_cmp += 1;
+	counts.fl_add += 3;
+	counts.fl_abs += 1;
+	if (abs(iso1 - iso2) < 0.00001) {
+		return;
+	}
+
+	//lerp 
+	// 3*2+2=8 adds, 1 div, 3 muls
+	//v = p1 + (p2 - p1) * ((threshold - iso1) / (iso2 - iso1));
+	counts.fl_add += 8;
+	counts.fl_div += 1;
+	counts.fl_mul += 3;
 }
 
 void MarchingCubes::computeNormal( int i, int j, int k ) {
