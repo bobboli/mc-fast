@@ -195,11 +195,10 @@ void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& 
 		if (edgeTable[cubeindex] & 2048)	vertexInterp_count_ops(threshold, i, j1, k, i, j1, k1, counts);
 
 		for (i = 0; triTable[cubeindex][i] != -1; i += 3) {
-			// 6 float adds
 			// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
 			// Vector3f b = vertList[triTable[cubeindex][i + 2]] - vertList[triTable[cubeindex][i + 1]];
 
-			counts.fl_add += 6;
+			//counts.fl_add += 6;
 
 			/*vertices[vertexCount] = vertList[triTable[cubeindex][i]];
 			vertices[vertexCount + 1] = vertList[triTable[cubeindex][i + 1]];
