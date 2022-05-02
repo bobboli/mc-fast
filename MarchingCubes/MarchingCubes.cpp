@@ -48,7 +48,7 @@ void MarchingCubes::update(float _threshold){
 			
 		threshold = _threshold;
 		
-		std::fill( normalVals.begin(), normalVals.end(), Vector3f());
+		//std::fill( normalVals.begin(), normalVals.end(), Vector3f());
 		std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
 		
 		vertexCount = 0;
@@ -117,21 +117,23 @@ void MarchingCubes::polygonise( int i, int j, int k ){
 		if (edgeTable[cubeindex] & 2048)	vertexInterp(threshold, i,j1,k, i,j1,k1, vertList[11], normList[11]);
 		
 		for (i=0;triTable[cubeindex][i]!=-1;i+=3) {
-			if(bSmoothed){
-				//smoothed normals
-				normals[vertexCount] = normList[triTable[cubeindex][i]];
-				normals[vertexCount+1] = normList[triTable[cubeindex][i+1]];
-				normals[vertexCount+2] = normList[triTable[cubeindex][i+2]];
-				
-			}
-			else{
-				//faceted
-				Vector3f a = vertList[triTable[cubeindex][i+1]] - vertList[triTable[cubeindex][i]];
-				Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
-				
-				normals[vertexCount] = normals[vertexCount+1] = normals[vertexCount+2] = a.crossed(b).normalize() * flipNormalsValue;
-			}
-			
+			//if(bSmoothed){
+			//	//smoothed normals
+			//	normals[vertexCount] = normList[triTable[cubeindex][i]];
+			//	normals[vertexCount+1] = normList[triTable[cubeindex][i+1]];
+			//	normals[vertexCount+2] = normList[triTable[cubeindex][i+2]];
+			//	
+			//}
+			//else{
+			//	//faceted
+			//	Vector3f a = vertList[triTable[cubeindex][i+1]] - vertList[triTable[cubeindex][i]];
+			//	Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
+			//	
+			//	normals[vertexCount] = normals[vertexCount+1] = normals[vertexCount+2] = a.crossed(b).normalize() * flipNormalsValue;
+			//}
+
+			Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
+			Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
 			vertices[vertexCount] = vertList[triTable[cubeindex][i]];
 			vertices[vertexCount+1] = vertList[triTable[cubeindex][i+1]];
 			vertices[vertexCount+2] = vertList[triTable[cubeindex][i+2]];
@@ -152,54 +154,69 @@ void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2
 	float& iso1 = getIsoValue(i1,j1,k1);
 	float& iso2 = getIsoValue(i2,j2,k2);
 	
-	if(bSmoothed){
-		//we need to interpolate/calculate the normals
-		computeNormal( i1, j1, k1 );
-		computeNormal( i2, j2, k2 );
-		
-		Vector3f& n1 = getNormalVal(i1,j1,k1);
-		Vector3f& n2 = getNormalVal(i2,j2,k2);
-		
-		if (abs(threshold-iso1) < 0.00001){
-			v = p1;
-			n = n1;
-			return;
-		}
-		if (abs(threshold-iso2) < 0.00001){
-			v = p2;
-			n = n2;
-			return;
-		}
-		if (abs(iso1-iso2) < 0.00001){
-			v = p1;
-			n = n1;
-			return;
-		}
-		
-		//lerp
-		float t = (threshold - iso1) / (iso2 - iso1);
-		v = p1 + (p2-p1) * t;
-		n = n1 + (n2-n1) * t;
+	//if(bSmoothed){
+	//	//we need to interpolate/calculate the normals
+	//	computeNormal( i1, j1, k1 );
+	//	computeNormal( i2, j2, k2 );
+	//	
+	//	Vector3f& n1 = getNormalVal(i1,j1,k1);
+	//	Vector3f& n2 = getNormalVal(i2,j2,k2);
+	//	
+	//	if (abs(threshold-iso1) < 0.00001){
+	//		v = p1;
+	//		n = n1;
+	//		return;
+	//	}
+	//	if (abs(threshold-iso2) < 0.00001){
+	//		v = p2;
+	//		n = n2;
+	//		return;
+	//	}
+	//	if (abs(iso1-iso2) < 0.00001){
+	//		v = p1;
+	//		n = n1;
+	//		return;
+	//	}
+	//	
+	//	//lerp
+	//	float t = (threshold - iso1) / (iso2 - iso1);
+	//	v = p1 + (p2-p1) * t;
+	//	n = n1 + (n2-n1) * t;
+	//}
+	//
+	//else{
+	//	//we'll calc the normal later
+	//	if (abs(threshold-iso1) < 0.00001){
+	//		v = p1;
+	//		return;
+	//	}
+	//	if (abs(threshold-iso2) < 0.00001){
+	//		v = p2;
+	//		return;
+	//	}
+	//	if (abs(iso1-iso2) < 0.00001){
+	//		v = p1;
+	//		return;
+	//	}
+	//	
+	//	//lerp
+	//	v = p1 + (p2-p1) * (threshold - iso1) / (iso2 - iso1);
+	//}
+	if (abs(threshold - iso1) < 0.00001) {
+		v = p1;
+		return;
 	}
-	
-	else{
-		//we'll calc the normal later
-		if (abs(threshold-iso1) < 0.00001){
-			v = p1;
-			return;
-		}
-		if (abs(threshold-iso2) < 0.00001){
-			v = p2;
-			return;
-		}
-		if (abs(iso1-iso2) < 0.00001){
-			v = p1;
-			return;
-		}
-		
-		//lerp
-		v = p1 + (p2-p1) * (threshold - iso1) / (iso2 - iso1);
+	if (abs(threshold-iso2) < 0.00001){
+		v = p2;
+		return;
 	}
+	if (abs(iso1-iso2) < 0.00001){
+		v = p1;
+		return;
+	}
+			
+	//lerp
+	v = p1 + (p2-p1) * (threshold - iso1) / (iso2 - iso1);
 }
 
 void MarchingCubes::computeNormal( int i, int j, int k ) {
@@ -342,15 +359,15 @@ void MarchingCubes::exportObj( string fileName ){
 	}
 	outfile << endl;
 	
-	for( int i=0; i<vertexCount; i++){
-		//n = normMat * normals[i];
-		n = normals[i];
-		outfile<< "vn ";
-		outfile<< n.x << " ";
-		outfile<< n.y << " ";
-		outfile<< n.z << endl;
-	}
-	outfile << endl;
+	//for( int i=0; i<vertexCount; i++){
+	//	//n = normMat * normals[i];
+	//	n = normals[i];
+	//	outfile<< "vn ";
+	//	outfile<< n.x << " ";
+	//	outfile<< n.y << " ";
+	//	outfile<< n.z << endl;
+	//}
+	//outfile << endl;
 	
 	//this only works for triangulated meshes
 	for( int i=0; i<vertexCount; i+=3){
