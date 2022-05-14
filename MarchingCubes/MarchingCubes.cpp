@@ -1,10 +1,4 @@
- //
-//  ofxMarchingCubes.cpp
-//  ofxMarchingCubes
-//
-
 #include "MarchingCubes.h"
-
 
 MarchingCubes::MarchingCubes(){
 	threshold = .5;
@@ -50,12 +44,11 @@ void MarchingCubes::update(float _threshold){
 		
 		//std::fill( normalVals.begin(), normalVals.end(), Vector3f());
 		std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
-		
 		vertexCount = 0;
-		for(int x=0; x<resX; x++){
-			for(int y=0; y<resY; y++){
-				for(int z=0; z<resZ; z++){
-					polygonise( x,y,z );
+		for (int x = 0; x < resX-1; x++) {
+			for (int y = 0; y < resY-1; y++) {
+				for (int z = 0; z < resZ-1; z++) {
+					polygonise(x, y, z);
 				}
 			}
 		}
@@ -92,7 +85,7 @@ void MarchingCubes::count_ops(float _threshold, operation_counts& counts) {
 //	ofPopMatrix();
 //}
 
-void MarchingCubes::polygonise( int i, int j, int k ){
+void MarchingCubes::polygonise(int i, int j, int k){
 	
 	if( vertexCount+3 < maxVertexCount ){
 		bUpdateMesh = true;
@@ -101,7 +94,7 @@ void MarchingCubes::polygonise( int i, int j, int k ){
 		 tells us which vertices are inside of the surface
 		 */
 		int cubeindex = 0;
-		int i1 = min(i+1, resXm1), j1 = min(j+1, resYm1), k1 = min(k+1, resZm1);
+		int i1 = i + 1, j1 = j + 1, k1 = k + 1;
 		cubeindex |= getIsoValue(i,j,k) > threshold ?   1 : 0;
 		cubeindex |= getIsoValue(i1,j,k) > threshold ?   2 : 0;
 		cubeindex |= getIsoValue(i1,j1,k) > threshold ?   4 : 0;
@@ -145,8 +138,8 @@ void MarchingCubes::polygonise( int i, int j, int k ){
 			//	normals[vertexCount] = normals[vertexCount+1] = normals[vertexCount+2] = a.crossed(b).normalize() * flipNormalsValue;
 			//}
 
-			Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
-			Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
+			// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
+			// Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
 			vertices[vertexCount] = vertList[triTable[cubeindex][i]];
 			vertices[vertexCount+1] = vertList[triTable[cubeindex][i+1]];
 			vertices[vertexCount+2] = vertList[triTable[cubeindex][i+2]];
