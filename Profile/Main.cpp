@@ -133,7 +133,8 @@ int main(int argc, char** argv)
     if (argc != 3) { printf("usage: <res> <threshold>. \n"); return -1; }
     int res = atoi(argv[1]);
     float radius = atof(argv[2]);
-    printf("resolution=%d, \n", res);
+    printf("resolution=%d\n", res);
+
     // 1. baseline result
     MarchingCubes mc;
     mc.setup(res, res, res);
@@ -141,9 +142,17 @@ int main(int argc, char** argv)
     //const float radius = 0.4;
     mc.update(radius);
     mc.exportObj("Sphere");
-
     
-    // 2. timing
+    // 2. Blocking result
+    MarchingCubes mc_b;
+    mc_b.setup(res, res, res);
+    mc_b.setBlocking(10, 10, 10);
+    SetSphere(mc_b);
+    //const float radius = 0.4;
+    mc_b.update_block(radius);
+    mc_b.exportObj("Sphere_block");
+
+    // 2. baseline timing
     MarchingCubes mc_s;
     mc_s.setup(res, res, res);
     SetSphere(mc_s);

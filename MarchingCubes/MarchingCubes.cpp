@@ -226,7 +226,7 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 	idx = 0;
 	for (x = i; x <= i + bX; x++) {
 		for (y = j; y <= j + bY; y++) {
-			for (z = k; z <= z + bZ; z++) {
+			for (z = k; z <= k + bZ; z++) {
 				thresCmp[idx] = getIsoValue(x, y, z) > threshold;
 				idx++;
 			}
@@ -234,10 +234,11 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 	}
 
 	idx = 0;
-	for (x = i; x < i + bX; x++) {
-		for (y = j; y < j + bY; y++) {
-			for (z = k; z < k + bZ; z++) {
+	for (x = 0; x < bX; x++) {
+		for (y = 0; y < bY; y++) {
+			for (z = 0; z < bZ; z++) {
 				int grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
+				cubeIndices[idx] = 0;
 				cubeIndices[idx] |= thresCmp[grid_idx] ? 1 : 0;
 				cubeIndices[idx] |= thresCmp[grid_idx + (bY+1) * (bZ+1)] ? 2 : 0;
 				cubeIndices[idx] |= thresCmp[grid_idx + (bY+1) * (bZ+1) + (bZ+1)] ? 4 : 0;
@@ -252,9 +253,9 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 	}
 	
 	int grid_idx;
-	for (x = i; x < i + bX; x++) {
-		for (y = j; y < j + bY; y++) {
-			for (z = k; z < k + bZ; z++) {
+	for (x = 0; x < bX; x++) {
+		for (y = 0; y < bY; y++) {
+			for (z = 0; z < bZ; z++) {
 				idx = x * bY * bZ + y * bZ + z;
 				grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
 				if (edgeTable[cubeIndices[idx]] & 1) vertexInterp(threshold, x, y, z, x+1, y, z, bVertList[grid_idx * 3], dummyN);
@@ -268,7 +269,7 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 			if (edgeTable[cubeIndices[idx]] & 128) vertexInterp(threshold, x, y, z, x, y+1, z, bVertList[grid_idx * 3 + 1], dummyN);
 		}
 		// Boundary y
-		for (z = k; z < k + bZ; z++) {
+		for (z = 0; z < bZ; z++) {
 			idx = x * bY * bZ + (y-1) * bZ + z;
 			grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
 			if (edgeTable[cubeIndices[idx]] & 4) vertexInterp(threshold, x, y, z, x+1, y, z, bVertList[grid_idx * 3], dummyN);
@@ -280,8 +281,8 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 		if (edgeTable[cubeIndices[idx]] & 64) vertexInterp(threshold, x, y, z, x+1, y, z, bVertList[grid_idx * 3], dummyN);
 	}
 	// Boundary x
-	for (y = j; y < j + bY; y++) {
-		for (z = k; z < k + bZ; z++) {
+	for (y = 0; y < bY; y++) {
+		for (z = 0; z < bZ; z++) {
 			idx = (x-1) * bY * bZ + y * bZ + z;
 			grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
 			if (edgeTable[cubeIndices[idx]] & 2) vertexInterp(threshold, x, y, z, x, y+1, z, bVertList[grid_idx * 3 + 1], dummyN);
@@ -293,44 +294,44 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 		if (edgeTable[cubeIndices[idx]] & 32) vertexInterp(threshold, x, y, z, x, y+1, z, bVertList[grid_idx * 3 + 1], dummyN);
 	}
 	// Boundary x,y
-	for (z = k; z < k + bZ; z++) {
+	for (z = 0; z < bZ; z++) {
 		idx = (x-1) * bY * bZ + (y-1) * bZ + z;
 		grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
 		if (edgeTable[cubeIndices[idx]] & 1024) vertexInterp(threshold, x, y, z, x, y, z+1, bVertList[grid_idx * 3 + 2], dummyN);
 	}
 	
 	idx = 0;
-	for (x = i; x < i + bX; x++) {
-		for (y = j; y < j + bY; y++) {
-			for (z = k; z < k + bZ; z++) {
+	for (x = 0; x < bX; x++) {
+		for (y = 0; y < bY; y++) {
+			for (z = 0; z < bZ; z++) {
 				grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
 				for (int ti = 0; triTable[cubeIndices[idx]][ti] != -1; ti += 3) {
 					for (int tj = 0; tj < 3; tj++) {
 						switch (triTable[cubeIndices[idx]][ti+tj]) {
 						case 0: // i,j,k - i1,j,k
-							vertices[vertexCount++] = vertList[grid_idx * 3]; break;
+							vertices[vertexCount++] = bVertList[grid_idx * 3]; break;
 						case 1: // i1,j,k - i1,j1,k
-							vertices[vertexCount++] = vertList[(grid_idx + (bY+1) * (bZ+1)) * 3 + 1]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + (bY+1) * (bZ+1)) * 3 + 1]; break;
 						case 2: // i,j1,k - i1,j1,k
-							vertices[vertexCount++] = vertList[(grid_idx + (bZ+1)) * 3]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + (bZ+1)) * 3]; break;
 						case 3: // i,j,k - i,j1,k
-							vertices[vertexCount++] = vertList[grid_idx * 3 + 1]; break;
+							vertices[vertexCount++] = bVertList[grid_idx * 3 + 1]; break;
 						case 4: // i,j,k1 - i1,j,k1
-							vertices[vertexCount++] = vertList[(grid_idx + 1) * 3]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + 1) * 3]; break;
 						case 5: // i1,j,k1 - i1,j1,k1
-							vertices[vertexCount++] = vertList[(grid_idx + (bY+1) * (bZ+1) + 1) * 3 + 1]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + (bY+1) * (bZ+1) + 1) * 3 + 1]; break;
 						case 6: // i,j1,k1 - i1,j1,k1
-							vertices[vertexCount++] = vertList[(grid_idx + (bZ+1) + 1) * 3]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + (bZ+1) + 1) * 3]; break;
 						case 7: // i,j,k1 - i,j1,k1
-							vertices[vertexCount++] = vertList[(grid_idx + 1) * 3 + 1]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + 1) * 3 + 1]; break;
 						case 8: // i,j,k - i,j,k1
-							vertices[vertexCount++] = vertList[grid_idx * 3 + 2]; break;
+							vertices[vertexCount++] = bVertList[grid_idx * 3 + 2]; break;
 						case 9: // i1,j,k - i1,j,k1
-							vertices[vertexCount++] = vertList[(grid_idx + (bY+1) * (bZ+1)) * 3 + 2]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + (bY+1) * (bZ+1)) * 3 + 2]; break;
 						case 10: // i1,j1,k - i1,j1,k1
-							vertices[vertexCount++] = vertList[(grid_idx + (bY+1) * (bZ+1) + (bZ+1)) * 3 + 2]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + (bY+1) * (bZ+1) + (bZ+1)) * 3 + 2]; break;
 						case 11: // i,j1,k - i,j1,k1
-							vertices[vertexCount++] = vertList[(grid_idx + (bZ+1)) * 3 + 2]; break;
+							vertices[vertexCount++] = bVertList[(grid_idx + (bZ+1)) * 3 + 2]; break;
 						}
 					}
 					if (vertexCount >= maxVertexCount && !beenWarned) {

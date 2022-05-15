@@ -173,7 +173,7 @@ public:
 
 	// Blocking intermediate results
 	int bX = 1, bY = 1, bZ = 1;
-	bool *thresCmp;
-	short *cubeIndices;
-	Vector3f *bVertList;
+	bool *thresCmp = nullptr;
+	short *cubeIndices = nullptr;
+	Vector3f *bVertList = nullptr;
 };
