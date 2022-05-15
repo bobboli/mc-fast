@@ -258,46 +258,46 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 			for (z = 0; z < bZ; z++) {
 				idx = x * bY * bZ + y * bZ + z;
 				grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
-				if (edgeTable[cubeIndices[idx]] & 1) vertexInterp(threshold, x, y, z, x+1, y, z, bVertList[grid_idx * 3], dummyN);
-				if (edgeTable[cubeIndices[idx]] & 8) vertexInterp(threshold, x, y, z, x, y+1, z, bVertList[grid_idx * 3 + 1], dummyN);
-				if (edgeTable[cubeIndices[idx]] & 256) vertexInterp(threshold, x, y, z, x, y, z+1, bVertList[grid_idx * 3 + 2], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 1) vertexInterp(threshold, x+i, y+j, z+k, x+i+1, y+j, z+k, bVertList[grid_idx * 3], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 8) vertexInterp(threshold, x+i, y+j, z+k, x+i, y+j+1, z+k, bVertList[grid_idx * 3 + 1], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 256) vertexInterp(threshold, x+i, y+j, z+k, x+i, y+j, z+k+1, bVertList[grid_idx * 3 + 2], dummyN);
 			}
 			// Boundary z
 			idx = x * bY * bZ + y * bZ + (z-1);
 			grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
-			if (edgeTable[cubeIndices[idx]] & 16) vertexInterp(threshold, x, y, z, x+1, y, z, bVertList[grid_idx * 3], dummyN);
-			if (edgeTable[cubeIndices[idx]] & 128) vertexInterp(threshold, x, y, z, x, y+1, z, bVertList[grid_idx * 3 + 1], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 16) vertexInterp(threshold, x+i, y+j, z+k, x+i+1, y+j, z+k, bVertList[grid_idx * 3], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 128) vertexInterp(threshold, x+i, y+j, z+k, x+i, y+j+1, z+k, bVertList[grid_idx * 3 + 1], dummyN);
 		}
 		// Boundary y
 		for (z = 0; z < bZ; z++) {
 			idx = x * bY * bZ + (y-1) * bZ + z;
 			grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
-			if (edgeTable[cubeIndices[idx]] & 4) vertexInterp(threshold, x, y, z, x+1, y, z, bVertList[grid_idx * 3], dummyN);
-			if (edgeTable[cubeIndices[idx]] & 2048) vertexInterp(threshold, x, y, z, x, y, z+1, bVertList[grid_idx * 3 + 2], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 4) vertexInterp(threshold, x+i, y+j, z+k, x+i+1, y+j, z+k, bVertList[grid_idx * 3], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 2048) vertexInterp(threshold, x+i, y+j, z+k, x+i, y+j, z+k+1, bVertList[grid_idx * 3 + 2], dummyN);
 		}
 		// Boundary y,z
 		idx = x * bY * bZ + (y-1) * bZ + (z-1);
 		grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
-		if (edgeTable[cubeIndices[idx]] & 64) vertexInterp(threshold, x, y, z, x+1, y, z, bVertList[grid_idx * 3], dummyN);
+		if (edgeTable[cubeIndices[idx]] & 64) vertexInterp(threshold, x+i, y+j, z+k, x+i+1, y+j, z+k, bVertList[grid_idx * 3], dummyN);
 	}
 	// Boundary x
 	for (y = 0; y < bY; y++) {
 		for (z = 0; z < bZ; z++) {
 			idx = (x-1) * bY * bZ + y * bZ + z;
 			grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
-			if (edgeTable[cubeIndices[idx]] & 2) vertexInterp(threshold, x, y, z, x, y+1, z, bVertList[grid_idx * 3 + 1], dummyN);
-			if (edgeTable[cubeIndices[idx]] & 512) vertexInterp(threshold, x, y, z, x, y, z+1, bVertList[grid_idx * 3 + 2], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 2) vertexInterp(threshold, x+i, y+j, z+k, x+i, y+j+1, z+k, bVertList[grid_idx * 3 + 1], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 512) vertexInterp(threshold, x+i, y+j, z+k, x+i, y+j, z+k+1, bVertList[grid_idx * 3 + 2], dummyN);
 		}
 		// Boundary x,z
 		idx = (x-1) * bY * bZ + y * bZ + (z-1);
 		grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
-		if (edgeTable[cubeIndices[idx]] & 32) vertexInterp(threshold, x, y, z, x, y+1, z, bVertList[grid_idx * 3 + 1], dummyN);
+		if (edgeTable[cubeIndices[idx]] & 32) vertexInterp(threshold, x+i, y+j, z+k, x+i, y+j+1, z+k, bVertList[grid_idx * 3 + 1], dummyN);
 	}
 	// Boundary x,y
 	for (z = 0; z < bZ; z++) {
 		idx = (x-1) * bY * bZ + (y-1) * bZ + z;
 		grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
-		if (edgeTable[cubeIndices[idx]] & 1024) vertexInterp(threshold, x, y, z, x, y, z+1, bVertList[grid_idx * 3 + 2], dummyN);
+		if (edgeTable[cubeIndices[idx]] & 1024) vertexInterp(threshold, x+i, y+j, z+k, x+i, y+j, z+k+1, bVertList[grid_idx * 3 + 2], dummyN);
 	}
 	
 	idx = 0;
