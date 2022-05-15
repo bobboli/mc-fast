@@ -3,10 +3,14 @@
 MarchingCubes::MarchingCubes(){
 	threshold = .5;
 	bSmoothed = true;
-	flipNormalsValue = -1;
-	
-};
-MarchingCubes::~MarchingCubes(){};
+	flipNormalsValue = -1;	
+}
+
+MarchingCubes::~MarchingCubes() {
+	if (thresCmp != nullptr) delete[] thresCmp;
+	if (cubeIndices != nullptr) delete[] cubeIndices;
+	if (bVertList != nullptr) delete[] bVertList;
+}
 
 void MarchingCubes::setMaxVertexCount( int _maxVertexCount ){
 	maxVertexCount = _maxVertexCount;

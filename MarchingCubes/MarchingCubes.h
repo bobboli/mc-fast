@@ -73,12 +73,7 @@ class MarchingCubes
 {
 public:
 	MarchingCubes();
-	~MarchingCubes()
-	{
-		if (thresCmp != nullptr) delete[] thresCmp;
-		if (cubeIndices != nullptr) delete[] cubeIndices;
-		if (bVertList != nullptr) delete[] bVertList;
-	}
+	~MarchingCubes();
 
 	void setMaxVertexCount(int _maxVertexCount = 100000);
 
