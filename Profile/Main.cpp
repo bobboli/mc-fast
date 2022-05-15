@@ -13,7 +13,7 @@
 #define FREQUENCY 2.8e9
 #define CALIBRATE
 
-double c_clock(MarchingCubes& mc, float r, MarchingCubesStage stage = ALL) {
+double c_clock(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, MarchingCubesStage stage = ALL) {
     int i, num_runs;
     double cycles;
     clock_t start, end;
@@ -23,7 +23,7 @@ double c_clock(MarchingCubes& mc, float r, MarchingCubesStage stage = ALL) {
     while (num_runs < (1 << 14)) {
         start = clock();
         for (i = 0; i < num_runs; ++i) {
-            mc.update(r);
+            (mc.*ptr_update)(r);
         }
         end = clock();
 
@@ -37,14 +37,14 @@ double c_clock(MarchingCubes& mc, float r, MarchingCubesStage stage = ALL) {
 #endif
     start = clock();
     for (i = 0; i < num_runs; ++i) {
-        mc.update(r);
+        (mc.*ptr_update)(r);
     }
     end = clock();
 
     return (double)(end - start) / num_runs;
 }
 
-double gettickcount(MarchingCubes& mc, float r, MarchingCubesStage stage = ALL) {
+double gettickcount(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, MarchingCubesStage stage = ALL) {
     int i, num_runs;
     double cycles, start, end;
 
@@ -53,7 +53,7 @@ double gettickcount(MarchingCubes& mc, float r, MarchingCubesStage stage = ALL) 
     while (num_runs < (1 << 14)) {
         start = (double)GetTickCount();
         for (i = 0; i < num_runs; ++i) {
-            mc.update(r);
+            (mc.*ptr_update)(r);
         }
         end = (double)GetTickCount();
 
@@ -67,14 +67,14 @@ double gettickcount(MarchingCubes& mc, float r, MarchingCubesStage stage = ALL) 
 
     start = (double)GetTickCount();
     for (i = 0; i < num_runs; ++i) {
-        mc.update(r);
+        (mc.*ptr_update)(r);
     }
     end = (double)GetTickCount();
 
     return (end - start) / num_runs;
 }
 
-double queryperfcounter(MarchingCubes& mc, float r, LARGE_INTEGER f, MarchingCubesStage stage = ALL) {
+double queryperfcounter(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, LARGE_INTEGER f, MarchingCubesStage stage = ALL) {
     int i, num_runs;
     double cycles;
     LARGE_INTEGER start, end;
@@ -84,7 +84,7 @@ double queryperfcounter(MarchingCubes& mc, float r, LARGE_INTEGER f, MarchingCub
     while (num_runs < (1 << 14)) {
         QueryPerformanceCounter(&start);
         for (i = 0; i < num_runs; ++i) {
-            mc.update(r);
+            (mc.*ptr_update)(r);
         }
         QueryPerformanceCounter(&end);
 
@@ -99,7 +99,7 @@ double queryperfcounter(MarchingCubes& mc, float r, LARGE_INTEGER f, MarchingCub
 
     QueryPerformanceCounter(&start);
     for (i = 0; i < num_runs; ++i) {
-        mc.update(r);
+        (mc.*ptr_update)(r);
     }
     QueryPerformanceCounter(&end);
 
@@ -152,27 +152,38 @@ int main(int argc, char** argv)
     mc_b.update_block(radius);
     mc_b.exportObj("Sphere_block");
 
-    // 2. baseline timing
-    MarchingCubes mc_s;
-    mc_s.setup(res, res, res);
-    SetSphere(mc_s);
-    double c = c_clock(mc_s, radius);
+
+    // 3. baseline timing
+    void (MarchingCubes:: * ptr_update)(float) = &MarchingCubes::update;
+    double c = c_clock(mc, ptr_update, radius);
     printf("C clock() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY. \n\n", c / CLOCKS_PER_SEC, c / CLOCKS_PER_SEC * FREQUENCY);
 
     LARGE_INTEGER f;
-    double t = gettickcount(mc_s, radius);
+    double t = gettickcount(mc, ptr_update, radius);
     printf("Windows getTickCount() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", t / 1000.0, t / 1000.0 * FREQUENCY);
 
     QueryPerformanceFrequency((LARGE_INTEGER*)&f);
-
-    double p = queryperfcounter(mc_s, radius, f);
+    double p = queryperfcounter(mc, ptr_update, radius, f);
     printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p / f.QuadPart, p / f.QuadPart * FREQUENCY);
     
-    mc_s.exportObj("Sphere_smoothed");
 
-    // 3. count floating point operations
+    // blocking timing
+    void (MarchingCubes:: * ptr_update_block)(float) = &MarchingCubes::update_block;
+    double c_b = c_clock(mc_b, ptr_update_block, radius);
+    printf("C clock() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY. \n\n", c_b / CLOCKS_PER_SEC, c_b / CLOCKS_PER_SEC * FREQUENCY);
+
+    LARGE_INTEGER f_b;
+    double t_b = gettickcount(mc_b, ptr_update_block, radius);
+    printf("Windows getTickCount() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", t_b / 1000.0, t_b / 1000.0 * FREQUENCY);
+
+    QueryPerformanceFrequency((LARGE_INTEGER*)&f_b);
+    double p_b = queryperfcounter(mc_b, ptr_update_block, radius, f_b);
+    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_b / f_b.QuadPart, p_b / f_b.QuadPart * FREQUENCY);
+
+
+    // 4. count floating point operations
     operation_counts counts;
-    mc_s.count_ops(radius, counts);
+    mc.count_ops(radius, counts);
     counts.print();
 
 	return 0;
