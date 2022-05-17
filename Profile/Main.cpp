@@ -130,9 +130,12 @@ void SetSphere(MarchingCubes& mc)
 
 int main(int argc, char** argv)
 {
-    if (argc != 3) { printf("usage: <res> <threshold>. \n"); return -1; }
+    if (argc != 6) { printf("usage: <res> <threshold>. \n"); return -1; }
     int res = atoi(argv[1]);
     float radius = atof(argv[2]);
+    int blockX = atoi(argv[3]);
+    int blockY = atoi(argv[4]);
+    int blockZ = atoi(argv[5]);
     printf("resolution=%d\n", res);
 
     // 1. baseline result
@@ -146,7 +149,7 @@ int main(int argc, char** argv)
     // 2. Blocking result
     MarchingCubes mc_b;
     mc_b.setup(res, res, res);
-    mc_b.setBlocking(10, 10, 10);
+    mc_b.setBlocking(blockX, blockY, blockZ);
     SetSphere(mc_b);
     //const float radius = 0.4;
     mc_b.update_block(radius);
