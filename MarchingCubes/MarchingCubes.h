@@ -142,7 +142,9 @@ public:
 
 	// private:
 	// ofMatrix4x4 transform;
+	// Number of grid points in each axis:
 	int resX, resY, resZ;
+	// Number of cubes in each axis, which is 1 less than number of grid points:
 	int resXm1, resYm1, resZm1;
 	float flipNormalsValue;
 	Vector3f cellDim;
@@ -172,7 +174,7 @@ public:
 	bool bUpdateMesh;
 
 	// Blocking intermediate results
-	int bX = 1, bY = 1, bZ = 1;
+	int bX = 1, bY = 1, bZ = 1;  // Block size in number of cells.
 	bool *thresCmp = nullptr;
 	short *cubeIndices = nullptr;
 	Vector3f *bVertList = nullptr;
