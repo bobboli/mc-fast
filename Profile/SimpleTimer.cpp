@@ -1,14 +1,6 @@
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
+#include "Profile.h"
 
-#define NUM_RUNS 10
-#define CYCLES_REQUIRED 1e8
-#define CALIBRATE
-#define FREQUENCY 2.8e9
-
-double c_clock(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, MarchingCubesStage stage = ALL) {
+double c_clock(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, MarchingCubesStage stage) {
     int i, num_runs;
     double cycles;
     clock_t start, end;
@@ -39,7 +31,7 @@ double c_clock(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), flo
     return (double)(end - start) / num_runs;
 }
 
-double gettickcount(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, MarchingCubesStage stage = ALL) {
+double gettickcount(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, MarchingCubesStage stage) {
     int i, num_runs;
     double cycles, start, end;
 
@@ -69,7 +61,7 @@ double gettickcount(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float)
     return (end - start) / num_runs;
 }
 
-double queryperfcounter(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, LARGE_INTEGER f, MarchingCubesStage stage = ALL) {
+double queryperfcounter(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(float), float r, LARGE_INTEGER f, MarchingCubesStage stage) {
     int i, num_runs;
     double cycles;
     LARGE_INTEGER start, end;

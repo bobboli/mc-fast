@@ -1,8 +1,7 @@
 ﻿// profile.cpp : Source file for your target.
 //
 
-#include "../MarchingCubes/MarchingCubes.h"
-#include "simple_timer.h"
+#include "Profile.h"
 
 void SetSphere(MarchingCubes& mc)
 {
@@ -27,7 +26,7 @@ void SetSphere(MarchingCubes& mc)
 
 int main(int argc, char** argv)
 {
-    if (argc != 6) { printf("usage: <res> <threshold>. \n"); return -1; }
+    if (argc != 6) { printf("usage: <res> <threshold> <blockX> <blockY> <blockZ>. \n"); return -1; }
     int res = atoi(argv[1]);
     float radius = atof(argv[2]);
     int blockX = atoi(argv[3]);

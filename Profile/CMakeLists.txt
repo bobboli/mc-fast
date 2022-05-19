@@ -1,5 +1,5 @@
-﻿add_executable(Profile "Main.cpp" )
-add_executable(ProfileFromFile "ProfileFromFile.cpp")
+﻿add_executable(Profile "ProfileSphere.cpp" "SimpleTimer.cpp" )
+add_executable(ProfileFromFile "ProfileFromFile.cpp" "SimpleTimer.cpp")
 
 target_link_libraries(Profile "MarchingCubes")
 target_link_libraries(ProfileFromFile "MarchingCubes")

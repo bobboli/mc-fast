@@ -1,5 +1,4 @@
-﻿#include "../MarchingCubes/MarchingCubes.h"
-#include "simple_timer.h"
+﻿#include "Profile.h"
 
 void SetupFromFile(MarchingCubes & mc, string filename)
 {
@@ -23,7 +22,7 @@ void SetupFromFile(MarchingCubes & mc, string filename)
         {
             for (int k = 0; k < resZ; k++)
             {
-                double val = 0.0;
+                float val = 0.0;
                 ifs >> val;
                 mc.setIsoValue(i, j, k, val);
             }
