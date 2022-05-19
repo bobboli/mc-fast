@@ -8,7 +8,7 @@ res = [16,32,64]
 block_x = 1
 block_y = 1
 
-print("runtime in cycles, don't forget to change FREQUENCY in /Profile/Main.cpp to your device frequency:")
+print("runtime in cycles, don't forget to change FREQUENCY in /Profile/simple_timer.h to your device frequency:")
 baseline_result = []
 blocking_result = []
 for i in res:
