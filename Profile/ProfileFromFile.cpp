@@ -79,13 +79,15 @@ void SetupFromVolFile(MarchingCubes& mc, char* filename)
 
 int main(int argc, char** argv)
 {
-    if (argc != 3) { printf("usage: <filepath> <threshold>. \n"); return -1; }
+    if (argc != 6) { printf("usage: <filepath> <threshold> <blockX> <blockY> <blockZ>. \n"); return -1; }
     char* filepath = argv[1];
     float threshold = atof(argv[2]);
+    int blockX = atoi(argv[3]);
+    int blockY = atoi(argv[4]);
+    int blockZ = atoi(argv[5]);
 
-    // 1. baseline result
+    // baseline result
     MarchingCubes mc;
-    //const float radius = 0.4;
     int len = strlen(filepath);
     char ext[4];
     ext[0] = filepath[len - 3];
@@ -93,7 +95,8 @@ int main(int argc, char** argv)
     ext[2] = filepath[len - 1];
     ext[3] = '\0';
    
-    if(strcmp(ext, "vol") == 0)
+    bool isVolFile = (strcmp(ext, "vol") == 0);
+    if(isVolFile)
     {
         SetupFromVolFile(mc, filepath);
     }
@@ -104,16 +107,35 @@ int main(int argc, char** argv)
     mc.update(threshold);
     mc.exportObj("OutputMesh");
     
-    // 2. Blocking result
-    //MarchingCubes mc_b;
-    //mc_b.setup(res, res, res);
-    //mc_b.setBlocking(blockX, blockY, blockZ);
-    ////const float radius = 0.4;
-    //mc_b.update_block(radius);
-    //mc_b.exportObj("Sphere_block");
+    // Blocking result
+    MarchingCubes mc_b;
+    mc_b.setBlocking(blockX, blockY, blockZ);
+    if (isVolFile)
+    {
+        SetupFromVolFile(mc_b, filepath);
+    }
+    else
+    {
+        SetupFromFile(mc_b, filepath);
+    }
+    mc_b.update_block(threshold);
+    mc_b.exportObj("OutputMesh_block");
 
+    // vectorization result
+    MarchingCubes mc_v;
+    mc_v.setBlocking(1, 1, 7);
+    if (isVolFile)
+    {
+        SetupFromVolFile(mc_v, filepath);
+    }
+    else
+    {
+        SetupFromFile(mc_v, filepath);
+    }
+    mc_v.update_vec(threshold);
+    mc_v.exportObj("OutputMesh_vec");
 
-    // 3. baseline timing
+    // baseline timing
     void (MarchingCubes:: * ptr_update)(float) = &MarchingCubes::update;
     LARGE_INTEGER f;
     QueryPerformanceFrequency((LARGE_INTEGER*)&f);
@@ -121,11 +143,17 @@ int main(int argc, char** argv)
     printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p / f.QuadPart, p / f.QuadPart * FREQUENCY);
     
     // blocking timing
-   /* void (MarchingCubes:: * ptr_update_block)(float) = &MarchingCubes::update_block;
+    void (MarchingCubes:: * ptr_update_block)(float) = &MarchingCubes::update_block;
     LARGE_INTEGER f_b;
     QueryPerformanceFrequency((LARGE_INTEGER*)&f_b);
-    double p_b = queryperfcounter(mc_b, ptr_update_block, radius, f_b);
-    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_b / f_b.QuadPart, p_b / f_b.QuadPart * FREQUENCY);*/
+    double p_b = queryperfcounter(mc_b, ptr_update_block, threshold, f_b);
+    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_b / f_b.QuadPart, p_b / f_b.QuadPart * FREQUENCY);
+
+    void (MarchingCubes:: * ptr_update_vec)(float) = &MarchingCubes::update_vec;
+    LARGE_INTEGER f_v;
+    QueryPerformanceFrequency((LARGE_INTEGER*)&f_v);
+    double p_v = queryperfcounter(mc_v, ptr_update_vec, threshold, f_v);
+    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_v / f_v.QuadPart, p_v / f_v.QuadPart * FREQUENCY);
 
 	return 0;
 }

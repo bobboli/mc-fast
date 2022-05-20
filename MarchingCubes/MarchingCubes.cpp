@@ -7,6 +7,10 @@ MarchingCubes::MarchingCubes(){
 }
 
 MarchingCubes::~MarchingCubes() {
+	if (isoValArray != nullptr) delete[] isoValArray;
+	if (thresCmpArray != nullptr) delete[] thresCmpArray;
+	if (thresCmpIntArray != nullptr) delete[] thresCmpIntArray;
+	if (edgeInterpVal != nullptr) delete[] edgeInterpVal;
 	if (thresCmp != nullptr) delete[] thresCmp;
 	if (cubeIndices != nullptr) delete[] cubeIndices;
 	if (bVertList != nullptr) delete[] bVertList;
@@ -61,7 +65,7 @@ void MarchingCubes::update(float _threshold){
 		threshold = _threshold;
 		
 		//std::fill( normalVals.begin(), normalVals.end(), Vector3f());
-		std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
+		//std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
 		vertexCount = 0;
 		for (int x = 0; x < resX - 1; x++) {
 			for (int y = 0; y < resY - 1; y++) {
@@ -83,7 +87,7 @@ void MarchingCubes::update(float _threshold){
 void MarchingCubes::update_block(float _threshold) {
 	threshold = _threshold;
 
-	std::fill(gridPointComputed.begin(), gridPointComputed.end(), 0);
+	//std::fill(gridPointComputed.begin(), gridPointComputed.end(), 0);
 	vertexCount = 0;
 
 	int x, y, z;
@@ -121,6 +125,125 @@ void MarchingCubes::update_block(float _threshold) {
 			}
 			for (; z < resZ - 1; z++) {
 				polygonise_block(x, y, z, 1, 1, 1);
+			}
+		}
+	}
+}
+
+void MarchingCubes::update_vec(float _threshold) {
+	threshold = _threshold;
+
+	vertexCount = 0;
+
+	// if we use 1-byte integer iso value and threshold (as in .vol files), we can do better than this
+
+	// compare stage: build global cmp array
+	__m256 vt = _mm256_set1_ps(threshold);
+	__m256 c1 = _mm256_set1_ps(1);
+	int num = resX * resY * resZ, n;
+	int dx = resY * resZ, dy = resZ;
+	for (n = 0; n < num - 7; n += 8) {
+		__m256 vals = _mm256_load_ps(isoValArray+n);
+		__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
+		__m256 res = _mm256_and_ps(cmp, c1);
+		// don't have _mm256_store_epi32, only avaiable in avx512
+		_mm256_storeu_epi32(thresCmpIntArray+n, _mm256_cvtps_epi32(res));
+	}
+	for (; n < num; ++n)
+	{
+		thresCmpIntArray[n] = isoValArray[n] > threshold ? 1 : 0;
+	}
+
+	
+	// global intersection
+	int x, y, z;
+	// check if edge is active for three directions
+	for (x = 0; x < resX-1; x++) {
+		for (y = 0; y < resY-1; y++) {
+			for (z = 0; z < resZ - 8; z += 8) {
+				int idx = x * dx + y * dy + z;
+				// i j k
+				//__m256i b = _mm256_loadu_epi32(thresCmpIntArray+idx);
+
+				// i+1 j k
+				/*__m256i b1 = _mm256_loadu_epi32(thresCmpIntArray+idx+dx);
+				__m256i cmp1 = _mm256_cmpeq_epi32(b1, b);
+				unsigned int mask1 = _mm256_movemask_epi8(cmp1);
+				if (mask1 == 0xffffffff)
+				{
+					continue;
+				}
+				else*/
+				{
+					// should gather the active edges into vector
+					__m256 val_start = _mm256_loadu_ps(isoValArray+idx);
+					__m256 val_end = _mm256_loadu_ps(isoValArray+idx+dx);
+					__m256 denominator = _mm256_sub_ps(val_end, val_start);
+					__m256 numerator = _mm256_sub_ps(vt, val_start);
+					__m256 res = _mm256_div_ps(numerator, denominator);
+					_mm256_storeu_ps(edgeInterpVal + idx, res);
+				}
+
+				// i j+1 k
+				/*__m256i b2 = _mm256_loadu_epi32(thresCmpIntArray + idx + dy);
+				__m256i cmp2 = _mm256_cmpeq_epi32(b2, b);
+				unsigned int mask2 = _mm256_movemask_epi8(cmp2);
+				if (mask2 == 0xffffffff)
+				{
+					continue;
+				}
+				else*/
+				{
+					// should gather the active edges into vector
+					__m256 val_start = _mm256_loadu_ps(isoValArray + idx);
+					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + dy);
+					__m256 denominator = _mm256_sub_ps(val_end, val_start);
+					__m256 numerator = _mm256_sub_ps(vt, val_start);
+					__m256 res = _mm256_div_ps(numerator, denominator);
+					_mm256_storeu_ps(edgeInterpVal + num + idx, res);
+				}
+
+				// i j k+1
+				/*__m256i b3 = _mm256_loadu_epi32(thresCmpIntArray + idx + 1);
+				__m256i cmp3 = _mm256_cmpeq_epi32(b3, b);
+				unsigned int mask3 = _mm256_movemask_epi8(cmp3);
+				if (mask3 == 0xffffffff)
+				{
+					continue;
+				}
+				else*/
+				{
+					// should gather the active edges into vector
+					__m256 val_start = _mm256_loadu_ps(isoValArray + idx);
+					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + 1);
+					__m256 denominator = _mm256_sub_ps(val_end, val_start);
+					__m256 numerator = _mm256_sub_ps(vt, val_start);
+					__m256 res = _mm256_div_ps(numerator, denominator);
+					_mm256_storeu_ps(edgeInterpVal + num + num + idx, res);
+				}
+			}
+			for (; z < resZ - 1; ++z)
+			{
+				int idx = x * dx + y * dy + z;
+				float start = isoValArray[idx];
+				float end_x = isoValArray[idx+dx];
+				float end_y = isoValArray[idx+dy];
+				float end_z = isoValArray[idx+1];
+				float numerator = threshold - start;
+				edgeInterpVal[idx] = numerator / (end_x - start);
+				edgeInterpVal[idx+num] = numerator / (end_y - start);
+				edgeInterpVal[idx+num*2] = numerator / (end_z - start);
+			}
+		}
+	}
+	
+	for (x = 0; x < resX - 1; x += 1) {
+		for (y = 0; y < resY - 1; y += 1) {
+			for (z = 0; z < resZ - bZ; z += bZ) {
+				polygonise_vec(x, y, z, 1, 1, bZ);
+			}
+			for (; z < resZ - 1; z++) {
+				polygonise(x, y, z);
 			}
 		}
 	}
@@ -346,6 +469,63 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 	}
 }
 
+void MarchingCubes::polygonise_vec(int i, int j, int k, int bX, int bY, int bZ) {
+	if (vertexCount >= maxVertexCount) return;
+
+	Vector3f dummyN;
+	int idx, x, y, z;
+
+	int dx = resY * resZ, dy = resZ;
+	i = min(i, resXm1);
+	j = min(j, resYm1);
+	k = min(k, resZm1);
+	int base = i * dx + j * dy + k;
+	idx = 0;
+
+	for (z = 0; z < bZ; z++) {
+		int grid_idx = z + base;
+		cubeIndices[idx] = 0;
+		cubeIndices[idx] |= thresCmpIntArray[grid_idx] ? 1 : 0;
+		cubeIndices[idx] |= thresCmpIntArray[grid_idx + dx] ? 2 : 0;
+		cubeIndices[idx] |= thresCmpIntArray[grid_idx + dx + dy] ? 4 : 0;
+		cubeIndices[idx] |= thresCmpIntArray[grid_idx + dy] ? 8 : 0;
+		cubeIndices[idx] |= thresCmpIntArray[grid_idx + 1] ? 16 : 0;
+		cubeIndices[idx] |= thresCmpIntArray[grid_idx + dx + 1] ? 32 : 0;
+		cubeIndices[idx] |= thresCmpIntArray[grid_idx + dx + dy + 1] ? 64 : 0;
+		cubeIndices[idx] |= thresCmpIntArray[grid_idx + dy + 1] ? 128 : 0;
+		idx++;
+	}
+	int i1 = i + 1, j1= j + 1; 
+	for (int n = 0; n < bZ; ++n)
+	{
+		int cubeindex = cubeIndices[n];
+		if (edgeTable[cubeindex] == 0) continue;
+
+		/* Find the vertices where the surface intersects the cube */
+		int kn = k + n;
+		int kn1 = k + n + 1;
+		if (edgeTable[cubeindex] & 1)		vertexInterp_vec(threshold, i, j, kn, i1, j, kn, vertList[0], normList[0]);
+		if (edgeTable[cubeindex] & 2)		vertexInterp_vec(threshold, i1, j, kn, i1, j1, kn, vertList[1], normList[1]);
+		if (edgeTable[cubeindex] & 4)		vertexInterp_vec(threshold, i1, j1, kn, i, j1, kn, vertList[2], normList[2]);
+		if (edgeTable[cubeindex] & 8)		vertexInterp_vec(threshold, i, j1, kn, i, j, kn, vertList[3], normList[3]);
+		if (edgeTable[cubeindex] & 16)		vertexInterp_vec(threshold, i, j, kn1, i1, j, kn1, vertList[4], normList[4]);
+		if (edgeTable[cubeindex] & 32)		vertexInterp_vec(threshold, i1, j, kn1, i1, j1, kn1, vertList[5], normList[5]);
+		if (edgeTable[cubeindex] & 64)		vertexInterp_vec(threshold, i1, j1, kn1, i, j1, kn1, vertList[6], normList[6]);
+		if (edgeTable[cubeindex] & 128)		vertexInterp_vec(threshold, i, j1, kn1, i, j, kn1, vertList[7], normList[7]);
+		if (edgeTable[cubeindex] & 256)		vertexInterp_vec(threshold, i, j, kn, i, j, kn1, vertList[8], normList[8]);
+		if (edgeTable[cubeindex] & 512)		vertexInterp_vec(threshold, i1, j, kn, i1, j, kn1, vertList[9], normList[9]);
+		if (edgeTable[cubeindex] & 1024)	vertexInterp_vec(threshold, i1, j1, kn, i1, j1, kn1, vertList[10], normList[10]);
+		if (edgeTable[cubeindex] & 2048)	vertexInterp_vec(threshold, i, j1, kn, i, j1, kn1, vertList[11], normList[11]);
+
+		for (int ii = 0; triTable[cubeindex][ii] != -1; ii += 3) {
+			vertices[vertexCount++] = vertList[triTable[cubeindex][ii]];
+			vertices[vertexCount++] = vertList[triTable[cubeindex][ii + 1]];
+			vertices[vertexCount++] = vertList[triTable[cubeindex][ii + 2]];
+		}
+	}
+}
+
+
 void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& counts) {
 
 	if (vertexCount + 3 < maxVertexCount) {
@@ -469,6 +649,67 @@ void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2
 	v = p1 + (p2-p1) * ((threshold - iso1) / (iso2 - iso1));
 }
 
+void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n) {
+
+	Vector3f& p1 = getGridPoint(i1, j1, k1);
+	Vector3f& p2 = getGridPoint(i2, j2, k2);
+
+	int idx1 = i1 * resZ * resY + j1 * resZ + k1;
+	int idx2 = i2 * resZ * resY + j2 * resZ + k2;
+	float& iso1 = isoValArray[idx1];
+	float& iso2 = isoValArray[idx2];
+
+	
+	/*if (abs(threshold - iso1) < 0.00001) {
+		v = p1;
+		return;
+	}
+	if (abs(threshold - iso2) < 0.00001) {
+		v = p2;
+		return;
+	}
+	if (abs(iso1 - iso2) < 0.00001) {
+		v = p1;
+		return;
+	}*/
+	float val = ((threshold - iso1) / (iso2 - iso1));
+	int num = resX * resY * resZ;
+	if (i2 == i1 + 1)
+	{
+		//lerp
+		/*if(abs(val - edgeInterpVal[idx1]) > 0.00001)
+			cout << i1 << " " << j1 << " " << k1 << endl;*/
+		v = p1 + (p2 - p1) * edgeInterpVal[idx1];
+		return;
+	}
+	else if (i2 == i1 - 1)
+	{
+		//lerp
+		v = p1 + (p2 - p1) * (1.0 - edgeInterpVal[idx2]);
+		return;
+	}
+	else if (j2 == j1 + 1)
+	{
+		v = p1 + (p2 - p1) * edgeInterpVal[idx1 + num];
+		return;
+	}
+	else if (j2 == j1 - 1) 
+	{
+		v = p1 + (p2 - p1) * (1.0 - edgeInterpVal[idx2 + num]);
+		return;
+	}
+	else if(k2 == k1 + 1)
+	{
+		v = p1 + (p2 - p1) * edgeInterpVal[idx1 + num * 2];
+		return;
+	}
+	else if (k2 == k1 - 1)
+	{
+		v = p1 + (p2 - p1) * (1.0 - edgeInterpVal[idx2 + num * 2]);
+		return;
+	}
+}
+
 void MarchingCubes::vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts& counts) {
 
 	Vector3f& p1 = getGridPoint(i1, j1, k1);
@@ -581,6 +822,7 @@ void MarchingCubes::setGridPoints( float _x, float _y, float _z){
 
 void MarchingCubes::setIsoValue( int x, int y, int z, float value){
 	getIsoValue(min(resXm1,x), min(resYm1,y), min(resZm1,z)) = value;
+	isoValArray[min(resXm1, x) * resY * resZ + min(resYm1, y) * resZ + min(resZm1, z)] = value;
 	getGridPointComputed(x,y,z) = 0;
 	bUpdateMesh = true;
 }
@@ -599,6 +841,15 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	normalVals.resize( resX*resY*resZ );
 	gridPointComputed.resize( resX*resY*resZ );
 	
+	if (isoValArray != nullptr) delete[] isoValArray;
+	isoValArray = new float[resX * resY * resZ];
+	if (thresCmpArray != nullptr) delete[] thresCmpArray;
+	thresCmpArray = new float[resX * resY * resZ];
+	if (thresCmpIntArray != nullptr) delete[] thresCmpIntArray;
+	thresCmpIntArray = new int[resX * resY * resZ];
+	if (edgeInterpVal != nullptr) delete[] edgeInterpVal;
+	edgeInterpVal = new float[resX * resY * resZ * 3];
+
 	setGridPoints( resX*10, resY*10, resZ*10 );
 }
 

@@ -26,6 +26,8 @@ TODO::
 #include <vector>
 #include <cmath>
 
+#include <immintrin.h>
+
 using namespace std;
 
 enum MarchingCubesStage
@@ -81,8 +83,10 @@ public:
 	void setBlocking(int blockX, int blockY, int blockZ);
 	void update() { update(threshold); }
 	void update_block() { update_block(threshold); }
+	void update_vec() { update_vec(threshold); }
 	void update(float _threshold);
 	void update_block(float _threshold);
+	void update_vec(float _threshold);
 	void count_ops(float _threshold, operation_counts &counts);
 
 	// void draw( GLenum renderType = GL_TRIANGLES );
@@ -94,9 +98,11 @@ public:
 	void setResolution(int _x = 10, int _y = 10, int _z = 10);
 	void polygonise(int i, int j, int k);
 	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
+	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
 	void computeNormal(int i, int j, int k);
 	void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
+	void vertexInterp_vec(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
 	void vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts &counts);
 
 	void setIsoValue(int x, int y, int z, float value);
@@ -152,6 +158,11 @@ public:
 	vector<Vector3f> gridPoints;
 	vector<Vector3f> normalVals;
 	vector<unsigned int> gridPointComputed;
+
+	float* isoValArray = nullptr;
+	float* thresCmpArray = nullptr;
+	int* thresCmpIntArray = nullptr;
+	float* edgeInterpVal = nullptr;
 
 	vector<Vector3f> vertices;
 	vector<Vector3f> normals;
