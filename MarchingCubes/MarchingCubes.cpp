@@ -153,13 +153,6 @@ void MarchingCubes::update_vec(float _threshold) {
 	{
 		thresCmpIntArray[n] = isoValArray[n] > threshold ? 1 : 0;
 	}
-
-	for (int i = 0; i < num; ++i)
-	{
-		int val = isoValArray[i] > threshold ? 1 : 0;
-		if (val != thresCmpIntArray[i])
-			cout << "!!!!!" << endl;
-	}
 	
 	// global intersection
 	int x, y, z;
