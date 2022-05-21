@@ -135,18 +135,18 @@ int main(int argc, char** argv)
     mc_v.update_vec(threshold);
     mc_v.exportObj("OutputMesh_vec");
 
-    MarchingCubes mc_v_16;
-    mc_v_16.setBlocking(1, 1, 16);
-    if (isVolFile)
-    {
-        SetupFromVolFile(mc_v_16, filepath);
-    }
-    else
-    {
-        SetupFromFile(mc_v_16, filepath);
-    }
-    mc_v_16.update_vec_16bit(threshold);
-    mc_v_16.exportObj("OutputMesh_vec16");
+    //MarchingCubes mc_v_16;
+    //mc_v_16.setBlocking(1, 1, 16);
+    //if (isVolFile)
+    //{
+    //    SetupFromVolFile(mc_v_16, filepath);
+    //}
+    //else
+    //{
+    //    SetupFromFile(mc_v_16, filepath);
+    //}
+    //mc_v_16.update_vec_16bit(threshold);
+    //mc_v_16.exportObj("OutputMesh_vec16");
 
     // baseline timing
     void (MarchingCubes:: * ptr_update)(float) = &MarchingCubes::update;
@@ -168,11 +168,11 @@ int main(int argc, char** argv)
     double p_v = queryperfcounter(mc_v, ptr_update_vec, threshold, f_v);
     printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_v / f_v.QuadPart, p_v / f_v.QuadPart * FREQUENCY);
 
-    void (MarchingCubes:: * ptr_update_vec_16bit)(float) = &MarchingCubes::update_vec_16bit;
+   /* void (MarchingCubes:: * ptr_update_vec_16bit)(float) = &MarchingCubes::update_vec_16bit;
     LARGE_INTEGER f_v_16;
     QueryPerformanceFrequency((LARGE_INTEGER*)&f_v_16);
     double p_v_16 = queryperfcounter(mc_v_16, ptr_update_vec_16bit, threshold, f_v_16);
-    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_v_16 / f_v_16.QuadPart, p_v_16 / f_v_16.QuadPart * FREQUENCY);
+    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_v_16 / f_v_16.QuadPart, p_v_16 / f_v_16.QuadPart * FREQUENCY);*/
 
 	return 0;
 }

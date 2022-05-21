@@ -267,13 +267,6 @@ void MarchingCubes::update_vec_16bit(float _threshold) {
 		thresCmpShortArray[n] = isoValArray[n] > threshold ? 1 : 0;
 	}
 
-	/*for (int i = 0; i < num; ++i)
-	{
-		short val = isoValArray[i] > threshold ? 1 : 0;
-		if (val != thresCmpShortArray[i])
-			cout << val << "!!!!!!!!!!" << thresCmpShortArray[i] << endl;
-	}*/
-
 	// global intersection
 	int x, y, z;
 	// check if edge is active for three directions
@@ -891,6 +884,7 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 		return;
 	}*/
 	int num = resX * resY * resZ;
+
 	if (i2 == i1 + 1)
 	{
 		//lerp
