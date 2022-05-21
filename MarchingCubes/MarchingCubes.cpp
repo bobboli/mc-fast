@@ -143,7 +143,7 @@ void MarchingCubes::update_vec(float _threshold) {
 	int num = resX * resY * resZ, n;
 	int dx = resY * resZ, dy = resZ;
 	for (n = 0; n < num - 7; n += 8) {
-		__m256 vals = _mm256_load_ps(isoValArray+n);
+		__m256 vals = _mm256_loadu_ps(isoValArray+n);
 		__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
 		__m256 res = _mm256_and_ps(cmp, c1);
 		// don't have _mm256_store_epi32, only avaiable in avx512
@@ -154,6 +154,12 @@ void MarchingCubes::update_vec(float _threshold) {
 		thresCmpIntArray[n] = isoValArray[n] > threshold ? 1 : 0;
 	}
 
+	for (int i = 0; i < num; ++i)
+	{
+		int val = isoValArray[i] > threshold ? 1 : 0;
+		if (val != thresCmpIntArray[i])
+			cout << "!!!!!" << endl;
+	}
 	
 	// global intersection
 	int x, y, z;
@@ -163,17 +169,13 @@ void MarchingCubes::update_vec(float _threshold) {
 			for (z = 0; z < resZ - 8; z += 8) {
 				int idx = x * dx + y * dy + z;
 				// i j k
-				//__m256i b = _mm256_loadu_epi32(thresCmpIntArray+idx);
+				__m256i b = _mm256_loadu_epi32(thresCmpIntArray+idx);
 
 				// i+1 j k
-				/*__m256i b1 = _mm256_loadu_epi32(thresCmpIntArray+idx+dx);
+				__m256i b1 = _mm256_loadu_epi32(thresCmpIntArray+idx+dx);
 				__m256i cmp1 = _mm256_cmpeq_epi32(b1, b);
 				unsigned int mask1 = _mm256_movemask_epi8(cmp1);
-				if (mask1 == 0xffffffff)
-				{
-					continue;
-				}
-				else*/
+				if (mask1 != 0xffffffff)
 				{
 					// should gather the active edges into vector
 					__m256 val_start = _mm256_loadu_ps(isoValArray+idx);
@@ -185,14 +187,10 @@ void MarchingCubes::update_vec(float _threshold) {
 				}
 
 				// i j+1 k
-				/*__m256i b2 = _mm256_loadu_epi32(thresCmpIntArray + idx + dy);
+				__m256i b2 = _mm256_loadu_epi32(thresCmpIntArray + idx + dy);
 				__m256i cmp2 = _mm256_cmpeq_epi32(b2, b);
 				unsigned int mask2 = _mm256_movemask_epi8(cmp2);
-				if (mask2 == 0xffffffff)
-				{
-					continue;
-				}
-				else*/
+				if (mask2 != 0xffffffff)
 				{
 					// should gather the active edges into vector
 					__m256 val_start = _mm256_loadu_ps(isoValArray + idx);
@@ -204,14 +202,10 @@ void MarchingCubes::update_vec(float _threshold) {
 				}
 
 				// i j k+1
-				/*__m256i b3 = _mm256_loadu_epi32(thresCmpIntArray + idx + 1);
+				__m256i b3 = _mm256_loadu_epi32(thresCmpIntArray + idx + 1);
 				__m256i cmp3 = _mm256_cmpeq_epi32(b3, b);
 				unsigned int mask3 = _mm256_movemask_epi8(cmp3);
-				if (mask3 == 0xffffffff)
-				{
-					continue;
-				}
-				else*/
+				if (mask3 != 0xffffffff)
 				{
 					// should gather the active edges into vector
 					__m256 val_start = _mm256_loadu_ps(isoValArray + idx);
@@ -672,13 +666,10 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 		v = p1;
 		return;
 	}*/
-	float val = ((threshold - iso1) / (iso2 - iso1));
 	int num = resX * resY * resZ;
 	if (i2 == i1 + 1)
 	{
 		//lerp
-		/*if(abs(val - edgeInterpVal[idx1]) > 0.00001)
-			cout << i1 << " " << j1 << " " << k1 << endl;*/
 		v = p1 + (p2 - p1) * edgeInterpVal[idx1];
 		return;
 	}
