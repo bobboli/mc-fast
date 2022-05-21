@@ -144,7 +144,7 @@ void MarchingCubes::update_vec(float _threshold) {
 	int num = resX * resY * resZ, n;
 	int dx = resY * resZ, dy = resZ;
 	for (n = 0; n < num - 7; n += 8) {
-		__m256 vals = _mm256_loadu_ps(isoValArray+n);
+		__m256 vals = _mm256_load_ps(isoValArray+n);
 		__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
 		__m256 res = _mm256_and_ps(cmp, c1);
 		// don't have _mm256_store_epi32, only avaiable in avx512
@@ -169,10 +169,10 @@ void MarchingCubes::update_vec(float _threshold) {
 				__m256i b1 = _mm256_loadu_epi32(thresCmpIntArray+idx+dx);
 				__m256i cmp1 = _mm256_cmpeq_epi32(b1, b);
 				unsigned int mask1 = _mm256_movemask_epi8(cmp1);
+				__m256 val_start = _mm256_load_ps(isoValArray + idx);
 				if (mask1 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_start = _mm256_loadu_ps(isoValArray+idx);
 					__m256 val_end = _mm256_loadu_ps(isoValArray+idx+dx);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
@@ -187,7 +187,6 @@ void MarchingCubes::update_vec(float _threshold) {
 				if (mask2 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_start = _mm256_loadu_ps(isoValArray + idx);
 					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + dy);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
@@ -202,7 +201,6 @@ void MarchingCubes::update_vec(float _threshold) {
 				if (mask3 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_start = _mm256_loadu_ps(isoValArray + idx);
 					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + 1);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
@@ -229,6 +227,144 @@ void MarchingCubes::update_vec(float _threshold) {
 		for (y = 0; y < resY - 1; y += 1) {
 			for (z = 0; z < resZ - bZ; z += bZ) {
 				polygonise_vec(x, y, z, 1, 1, bZ);
+			}
+			for (; z < resZ - 1; z++) {
+				polygonise(x, y, z);
+			}
+		}
+	}
+}
+
+void MarchingCubes::update_vec_16bit(float _threshold) {
+	threshold = _threshold;
+
+	vertexCount = 0;
+
+	// if we use 1-byte integer iso value and threshold (as in .vol files), we can do better than this
+
+	// compare stage: build global cmp array
+	__m256 vt = _mm256_set1_ps(threshold);
+	__m256 c1 = _mm256_set1_ps(1);
+	int num = resX * resY * resZ, n;
+	int dx = resY * resZ, dy = resZ;
+	for (n = 0; n < num - 15; n += 16) {
+		// we can only compare 8 floats a time
+		__m256 vals1 = _mm256_load_ps(isoValArray + n);
+		__m256 cmp1 = _mm256_cmp_ps(vals1, vt, _CMP_GT_OQ);
+		__m256i res1 = _mm256_cvtps_epi32(_mm256_and_ps(cmp1, c1));
+
+		__m256 vals2 = _mm256_load_ps(isoValArray + n + 8);
+		__m256 cmp2 = _mm256_cmp_ps(vals2, vt, _CMP_GT_OQ);
+		__m256i res2 = _mm256_cvtps_epi32(_mm256_and_ps(cmp2, c1));
+
+		__m256i res3 = _mm256_packs_epi32(res1, res2);
+		__m256i res4 = _mm256_permute4x64_epi64(res3, 0b11011000);
+		_mm256_storeu_epi16(thresCmpShortArray + n, res4);
+	}
+
+	for (; n < num; ++n)
+	{
+		thresCmpShortArray[n] = isoValArray[n] > threshold ? 1 : 0;
+	}
+
+	/*for (int i = 0; i < num; ++i)
+	{
+		short val = isoValArray[i] > threshold ? 1 : 0;
+		if (val != thresCmpShortArray[i])
+			cout << val << "!!!!!!!!!!" << thresCmpShortArray[i] << endl;
+	}*/
+
+	// global intersection
+	int x, y, z;
+	// check if edge is active for three directions
+	for (x = 0; x < resX - 1; x++) {
+		for (y = 0; y < resY - 1; y++) {
+			for (z = 0; z < resZ - 16; z += 16) {
+				int idx = x * dx + y * dy + z;
+				// i j k
+				__m256i b = _mm256_loadu_epi16(thresCmpShortArray + idx);
+
+				// i+1 j k
+				__m256i b1 = _mm256_loadu_epi16(thresCmpShortArray + idx + dx);
+				__m256i cmp1 = _mm256_cmpeq_epi16(b1, b);
+				unsigned int mask1 = _mm256_movemask_epi8(cmp1);
+				__m256 val_start = _mm256_loadu_ps(isoValArray + idx);
+				__m256 val_start2 = _mm256_loadu_ps(isoValArray + idx + 8);
+				if (mask1 != 0xffffffff)
+				{
+					// should gather the active edges into vector
+					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + dx);
+					__m256 denominator = _mm256_sub_ps(val_end, val_start);
+					__m256 numerator = _mm256_sub_ps(vt, val_start);
+					__m256 res = _mm256_div_ps(numerator, denominator);
+					_mm256_storeu_ps(edgeInterpVal + idx, res);
+					
+					__m256 val_end2 = _mm256_loadu_ps(isoValArray + idx + dx + 8);
+					__m256 denominator2 = _mm256_sub_ps(val_end2, val_start2);
+					__m256 numerator2 = _mm256_sub_ps(vt, val_start2);
+					__m256 res2 = _mm256_div_ps(numerator2, denominator2);
+					_mm256_storeu_ps(edgeInterpVal + idx + 8, res2);
+				}
+
+				// i j+1 k
+				__m256i b2 = _mm256_loadu_epi16(thresCmpShortArray + idx + dy);
+				__m256i cmp2 = _mm256_cmpeq_epi16(b2, b);
+				unsigned int mask2 = _mm256_movemask_epi8(cmp2);
+				if (mask2 != 0xffffffff)
+				{
+					// should gather the active edges into vector
+					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + dy);
+					__m256 denominator = _mm256_sub_ps(val_end, val_start);
+					__m256 numerator = _mm256_sub_ps(vt, val_start);
+					__m256 res = _mm256_div_ps(numerator, denominator);
+					_mm256_storeu_ps(edgeInterpVal + num + idx, res);
+
+					__m256 val_end2 = _mm256_loadu_ps(isoValArray + idx + dy + 8);
+					__m256 denominator2 = _mm256_sub_ps(val_end2, val_start2);
+					__m256 numerator2 = _mm256_sub_ps(vt, val_start2);
+					__m256 res2 = _mm256_div_ps(numerator2, denominator2);
+					_mm256_storeu_ps(edgeInterpVal + num + idx + 8, res2);
+				}
+
+				// i j k+1
+				__m256i b3 = _mm256_loadu_epi16(thresCmpIntArray + idx + 1);
+				__m256i cmp3 = _mm256_cmpeq_epi16(b3, b);
+				unsigned int mask3 = _mm256_movemask_epi8(cmp3);
+				if (mask3 != 0xffffffff)
+				{
+					// should gather the active edges into vector
+					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + 1);
+					__m256 denominator = _mm256_sub_ps(val_end, val_start);
+					__m256 numerator = _mm256_sub_ps(vt, val_start);
+					__m256 res = _mm256_div_ps(numerator, denominator);
+					_mm256_storeu_ps(edgeInterpVal + num + num + idx, res);
+
+					__m256 val_end2 = _mm256_loadu_ps(isoValArray + idx + 1 + 8);
+					__m256 denominator2 = _mm256_sub_ps(val_end2, val_start2);
+					__m256 numerator2 = _mm256_sub_ps(vt, val_start2);
+					__m256 res2 = _mm256_div_ps(numerator2, denominator2);
+					_mm256_storeu_ps(edgeInterpVal + num + num + idx + 8, res2);
+				}
+			}
+			for (; z < resZ - 1; ++z)
+			{
+				int idx = x * dx + y * dy + z;
+				float start = isoValArray[idx];
+				float end_x = isoValArray[idx + dx];
+				float end_y = isoValArray[idx + dy];
+				float end_z = isoValArray[idx + 1];
+				float numerator = threshold - start;
+				edgeInterpVal[idx] = numerator / (end_x - start);
+				edgeInterpVal[idx + num] = numerator / (end_y - start);
+				edgeInterpVal[idx + num * 2] = numerator / (end_z - start);
+			}
+		}
+	}
+
+	for (x = 0; x < resX - 1; x += 1) {
+		for (y = 0; y < resY - 1; y += 1) {
+			for (z = 0; z < resZ - bZ; z += bZ) {
+				polygonise_vec_16bit(x, y, z, 1, 1, bZ);
 			}
 			for (; z < resZ - 1; z++) {
 				polygonise(x, y, z);
@@ -538,6 +674,75 @@ void MarchingCubes::polygonise_vec(int i, int j, int k, int bX, int bY, int bZ) 
 	}
 }
 
+void MarchingCubes::polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ) {
+	// not very different from 32bit
+	
+	if (vertexCount >= maxVertexCount) return;
+
+	Vector3f dummyN;
+	int idx, x, y, z;
+
+	int dx = resY * resZ, dy = resZ;
+	i = min(i, resXm1);
+	j = min(j, resYm1);
+	k = min(k, resZm1);
+	int base = i * dx + j * dy + k;
+	idx = 0;
+	__m256i b_000 = _mm256_loadu_epi16(thresCmpShortArray + base);
+	__m256i b_001 = _mm256_loadu_epi16(thresCmpShortArray + base + 1);
+	__m256i b_010 = _mm256_loadu_epi16(thresCmpShortArray + base + dy);
+	__m256i b_011 = _mm256_loadu_epi16(thresCmpShortArray + base + dy + 1);
+	__m256i b_100 = _mm256_loadu_epi16(thresCmpShortArray + base + dx);
+	__m256i b_101 = _mm256_loadu_epi16(thresCmpShortArray + base + dx + 1);
+	__m256i b_110 = _mm256_loadu_epi16(thresCmpShortArray + base + dx + dy);
+	__m256i b_111 = _mm256_loadu_epi16(thresCmpShortArray + base + dx + dy + 1);
+	__m256i bs_100 = _mm256_slli_epi16(b_100, 1);
+	__m256i bs_110 = _mm256_slli_epi16(b_110, 2);
+	__m256i bs_010 = _mm256_slli_epi16(b_010, 3);
+	__m256i bs_001 = _mm256_slli_epi16(b_001, 4);
+	__m256i bs_101 = _mm256_slli_epi16(b_101, 5);
+	__m256i bs_111 = _mm256_slli_epi16(b_111, 6);
+	__m256i bs_011 = _mm256_slli_epi16(b_011, 7);
+	__m256i cube_index = _mm256_set1_epi16(0);
+	cube_index = _mm256_add_epi16(cube_index, b_000);
+	cube_index = _mm256_add_epi16(cube_index, bs_001);
+	cube_index = _mm256_add_epi16(cube_index, bs_010);
+	cube_index = _mm256_add_epi16(cube_index, bs_011);
+	cube_index = _mm256_add_epi16(cube_index, bs_100);
+	cube_index = _mm256_add_epi16(cube_index, bs_101);
+	cube_index = _mm256_add_epi16(cube_index, bs_110);
+	cube_index = _mm256_add_epi16(cube_index, bs_111);
+	_mm256_storeu_epi16(cubeIndices, cube_index);
+
+	int i1 = i + 1, j1 = j + 1;
+	for (int n = 0; n < bZ; ++n)
+	{
+		int cubeindex = cubeIndices[n];
+		if (edgeTable[cubeindex] == 0) continue;
+
+		/* Find the vertices where the surface intersects the cube */
+		int kn = k + n;
+		int kn1 = k + n + 1;
+		if (edgeTable[cubeindex] & 1)		vertexInterp_vec(threshold, i, j, kn, i1, j, kn, vertList[0], normList[0]);
+		if (edgeTable[cubeindex] & 2)		vertexInterp_vec(threshold, i1, j, kn, i1, j1, kn, vertList[1], normList[1]);
+		if (edgeTable[cubeindex] & 4)		vertexInterp_vec(threshold, i1, j1, kn, i, j1, kn, vertList[2], normList[2]);
+		if (edgeTable[cubeindex] & 8)		vertexInterp_vec(threshold, i, j1, kn, i, j, kn, vertList[3], normList[3]);
+		if (edgeTable[cubeindex] & 16)		vertexInterp_vec(threshold, i, j, kn1, i1, j, kn1, vertList[4], normList[4]);
+		if (edgeTable[cubeindex] & 32)		vertexInterp_vec(threshold, i1, j, kn1, i1, j1, kn1, vertList[5], normList[5]);
+		if (edgeTable[cubeindex] & 64)		vertexInterp_vec(threshold, i1, j1, kn1, i, j1, kn1, vertList[6], normList[6]);
+		if (edgeTable[cubeindex] & 128)		vertexInterp_vec(threshold, i, j1, kn1, i, j, kn1, vertList[7], normList[7]);
+		if (edgeTable[cubeindex] & 256)		vertexInterp_vec(threshold, i, j, kn, i, j, kn1, vertList[8], normList[8]);
+		if (edgeTable[cubeindex] & 512)		vertexInterp_vec(threshold, i1, j, kn, i1, j, kn1, vertList[9], normList[9]);
+		if (edgeTable[cubeindex] & 1024)	vertexInterp_vec(threshold, i1, j1, kn, i1, j1, kn1, vertList[10], normList[10]);
+		if (edgeTable[cubeindex] & 2048)	vertexInterp_vec(threshold, i, j1, kn, i, j1, kn1, vertList[11], normList[11]);
+
+		for (int ii = 0; triTable[cubeindex][ii] != -1; ii += 3) {
+			vertices[vertexCount++] = vertList[triTable[cubeindex][ii]];
+			vertices[vertexCount++] = vertList[triTable[cubeindex][ii + 1]];
+			vertices[vertexCount++] = vertList[triTable[cubeindex][ii + 2]];
+		}
+	}
+}
 
 void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& counts) {
 
@@ -669,8 +874,8 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 
 	int idx1 = i1 * resZ * resY + j1 * resZ + k1;
 	int idx2 = i2 * resZ * resY + j2 * resZ + k2;
-	float& iso1 = isoValArray[idx1];
-	float& iso2 = isoValArray[idx2];
+	/*float& iso1 = isoValArray[idx1];
+	float& iso2 = isoValArray[idx2];*/
 
 	
 	/*if (abs(threshold - iso1) < 0.00001) {
@@ -857,8 +1062,8 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	thresCmpArray = new float[resX * resY * resZ];
 	if (thresCmpIntArray != nullptr) delete[] thresCmpIntArray;
 	thresCmpIntArray = new int[resX * resY * resZ];
-	if (thresCmpUint8Array != nullptr) delete[] thresCmpUint8Array;
-	thresCmpUint8Array = new uint8_t[resX * resY * resZ];
+	if (thresCmpShortArray != nullptr) delete[] thresCmpShortArray;
+	thresCmpShortArray = new short[resX * resY * resZ];
 	if (edgeInterpVal != nullptr) delete[] edgeInterpVal;
 	edgeInterpVal = new float[resX * resY * resZ * 3];
 

@@ -87,6 +87,7 @@ public:
 	void update(float _threshold);
 	void update_block(float _threshold);
 	void update_vec(float _threshold);
+	void update_vec_16bit(float _threshold);
 	void count_ops(float _threshold, operation_counts &counts);
 
 	// void draw( GLenum renderType = GL_TRIANGLES );
@@ -99,6 +100,7 @@ public:
 	void polygonise(int i, int j, int k);
 	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
+	void polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
 	void computeNormal(int i, int j, int k);
 	void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
@@ -162,8 +164,9 @@ public:
 	float* isoValArray = nullptr;
 	float* thresCmpArray = nullptr;
 	int* thresCmpIntArray = nullptr;
-	uint8_t* thresCmpUint8Array = nullptr;
+	short* thresCmpShortArray = nullptr;
 	float* edgeInterpVal = nullptr;
+	Vector3f* verticesOffset = nullptr;
 
 	vector<Vector3f> vertices;
 	vector<Vector3f> normals;
