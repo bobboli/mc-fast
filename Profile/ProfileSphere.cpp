@@ -34,7 +34,7 @@ int main(int argc, char** argv)
     int blockZ = atoi(argv[5]);
     printf("resolution=%d\n", res);
 
-    // 1. baseline result
+    // baseline result
     MarchingCubes mc;
     mc.setup(res, res, res);
     SetSphere(mc);
@@ -42,23 +42,21 @@ int main(int argc, char** argv)
     mc.update(radius);
     mc.exportObj("Sphere");
     
-    // 2. Blocking result
+    // blocking result
     MarchingCubes mc_b;
     mc_b.setup(res, res, res);
     mc_b.setBlocking(blockX, blockY, blockZ);
     SetSphere(mc_b);
-    //const float radius = 0.4;
     mc_b.update_block(radius);
     mc_b.exportObj("Sphere_block");
 
+    // vectorization result
     MarchingCubes mc_v;
     mc_v.setup(res, res, res);
     mc_v.setBlocking(1, 1, 8);
     SetSphere(mc_v);
-    //const float radius = 0.4;
     mc_v.update_vec(radius);
     mc_v.exportObj("Sphere_vec");
-
 
     // baseline timing
     void (MarchingCubes:: * ptr_update)(float) = &MarchingCubes::update;
@@ -81,7 +79,7 @@ int main(int argc, char** argv)
     double p_v = queryperfcounter(mc_v, ptr_update_vec, radius, f_v);
     printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_v / f_v.QuadPart, p_v / f_v.QuadPart * FREQUENCY);
 
-    // 4. count floating point operations
+    // count baseline floating point operations
     operation_counts counts;
     mc.count_ops(radius, counts);
     counts.print();
