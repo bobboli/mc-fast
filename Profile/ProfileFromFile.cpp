@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 
     // vectorization result
     MarchingCubes mc_v;
-    mc_v.setBlocking(1, 1, 7);
+    mc_v.setBlocking(1, 1, 8);
     if (isVolFile)
     {
         SetupFromVolFile(mc_v, filepath);

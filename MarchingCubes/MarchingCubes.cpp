@@ -54,6 +54,7 @@ void MarchingCubes::setBlocking(int blockX, int blockY, int blockZ) {
 
 	thresCmp = new bool[(bX + 1) * (bY + 1) * (bZ + 1)];
 	cubeIndices = new short[bX * bY * bZ];
+	cubeIndicesInt = new int[bX * bY * bZ];
 	bVertList = new Vector3f[(bX + 1) * (bY + 1) * (bZ + 1) * 3];
 }
 
@@ -468,8 +469,33 @@ void MarchingCubes::polygonise_vec(int i, int j, int k, int bX, int bY, int bZ) 
 	k = min(k, resZm1);
 	int base = i * dx + j * dy + k;
 	idx = 0;
+	__m256i b_000 = _mm256_loadu_epi32(thresCmpIntArray+base);
+	__m256i b_001 = _mm256_loadu_epi32(thresCmpIntArray+base+1);
+	__m256i b_010 = _mm256_loadu_epi32(thresCmpIntArray+base+dy);
+	__m256i b_011 = _mm256_loadu_epi32(thresCmpIntArray+base+dy+1);
+	__m256i b_100 = _mm256_loadu_epi32(thresCmpIntArray+base+dx);
+	__m256i b_101 = _mm256_loadu_epi32(thresCmpIntArray+base+dx+1);
+	__m256i b_110 = _mm256_loadu_epi32(thresCmpIntArray+base+dx+dy);
+	__m256i b_111 = _mm256_loadu_epi32(thresCmpIntArray+base+dx+dy+1);
+	__m256i bs_100 = _mm256_slli_epi32(b_100, 1);
+	__m256i bs_110 = _mm256_slli_epi32(b_110, 2);
+	__m256i bs_010 = _mm256_slli_epi32(b_010, 3);
+	__m256i bs_001 = _mm256_slli_epi32(b_001, 4);
+	__m256i bs_101 = _mm256_slli_epi32(b_101, 5);
+	__m256i bs_111 = _mm256_slli_epi32(b_111, 6);
+	__m256i bs_011 = _mm256_slli_epi32(b_011, 7);
+	__m256i cube_index = _mm256_set1_epi32(0);
+	cube_index = _mm256_add_epi32(cube_index, b_000);
+	cube_index = _mm256_add_epi32(cube_index, bs_001);
+	cube_index = _mm256_add_epi32(cube_index, bs_010);
+	cube_index = _mm256_add_epi32(cube_index, bs_011);
+	cube_index = _mm256_add_epi32(cube_index, bs_100);
+	cube_index = _mm256_add_epi32(cube_index, bs_101);
+	cube_index = _mm256_add_epi32(cube_index, bs_110);
+	cube_index = _mm256_add_epi32(cube_index, bs_111);
+	_mm256_storeu_epi32(cubeIndicesInt, cube_index);
 
-	for (z = 0; z < bZ; z++) {
+	/*for (z = 0; z < bZ; z++) {
 		int grid_idx = z + base;
 		cubeIndices[idx] = 0;
 		cubeIndices[idx] |= thresCmpIntArray[grid_idx] ? 1 : 0;
@@ -481,11 +507,11 @@ void MarchingCubes::polygonise_vec(int i, int j, int k, int bX, int bY, int bZ) 
 		cubeIndices[idx] |= thresCmpIntArray[grid_idx + dx + dy + 1] ? 64 : 0;
 		cubeIndices[idx] |= thresCmpIntArray[grid_idx + dy + 1] ? 128 : 0;
 		idx++;
-	}
+	}*/
 	int i1 = i + 1, j1= j + 1; 
 	for (int n = 0; n < bZ; ++n)
 	{
-		int cubeindex = cubeIndices[n];
+		int cubeindex = cubeIndicesInt[n];
 		if (edgeTable[cubeindex] == 0) continue;
 
 		/* Find the vertices where the surface intersects the cube */
@@ -831,6 +857,8 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	thresCmpArray = new float[resX * resY * resZ];
 	if (thresCmpIntArray != nullptr) delete[] thresCmpIntArray;
 	thresCmpIntArray = new int[resX * resY * resZ];
+	if (thresCmpUint8Array != nullptr) delete[] thresCmpUint8Array;
+	thresCmpUint8Array = new uint8_t[resX * resY * resZ];
 	if (edgeInterpVal != nullptr) delete[] edgeInterpVal;
 	edgeInterpVal = new float[resX * resY * resZ * 3];
 

@@ -162,6 +162,7 @@ public:
 	float* isoValArray = nullptr;
 	float* thresCmpArray = nullptr;
 	int* thresCmpIntArray = nullptr;
+	uint8_t* thresCmpUint8Array = nullptr;
 	float* edgeInterpVal = nullptr;
 
 	vector<Vector3f> vertices;
@@ -188,5 +189,6 @@ public:
 	int bX = 1, bY = 1, bZ = 1;  // Block size in number of cells.
 	bool *thresCmp = nullptr;
 	short *cubeIndices = nullptr;
+	int *cubeIndicesInt = nullptr;
 	Vector3f *bVertList = nullptr;
 };
