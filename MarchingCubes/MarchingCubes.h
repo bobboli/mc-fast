@@ -88,6 +88,8 @@ public:
 	void update_block(float _threshold);
 	void update_vec(float _threshold);
 	void update_vec_16bit(float _threshold);
+	void update_block_new(float _threshold);
+	void update_block_new() { update_block_new(threshold); }
 	void count_ops(float _threshold, operation_counts &counts);
 
 	// void draw( GLenum renderType = GL_TRIANGLES );
@@ -99,6 +101,8 @@ public:
 	void setResolution(int _x = 10, int _y = 10, int _z = 10);
 	void polygonise(int i, int j, int k);
 	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
+	void polygonise_block_new(int i, int j, int k, int bX, int bY, int bZ);
+
 	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
