@@ -864,14 +864,13 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 
 	Vector3f& p1 = getGridPoint(i1, j1, k1);
 	Vector3f& p2 = getGridPoint(i2, j2, k2);
+	float& iso1 = getIsoValue(i1, j1, k1);
+	float& iso2 = getIsoValue(i2, j2, k2);
 
 	int idx1 = i1 * resZ * resY + j1 * resZ + k1;
 	int idx2 = i2 * resZ * resY + j2 * resZ + k2;
-	/*float& iso1 = isoValArray[idx1];
-	float& iso2 = isoValArray[idx2];*/
-
 	
-	/*if (abs(threshold - iso1) < 0.00001) {
+	if (abs(threshold - iso1) < 0.00001) {
 		v = p1;
 		return;
 	}
@@ -882,7 +881,7 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 	if (abs(iso1 - iso2) < 0.00001) {
 		v = p1;
 		return;
-	}*/
+	}
 	int num = resX * resY * resZ;
 
 	if (i2 == i1 + 1)
@@ -894,7 +893,7 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 	else if (i2 == i1 - 1)
 	{
 		//lerp
-		v = p1 + (p2 - p1) * (1.0 - edgeInterpVal[idx2]);
+		v = p2 + (p1 - p2) * edgeInterpVal[idx2];
 		return;
 	}
 	else if (j2 == j1 + 1)
@@ -904,7 +903,7 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 	}
 	else if (j2 == j1 - 1) 
 	{
-		v = p1 + (p2 - p1) * (1.0 - edgeInterpVal[idx2 + num]);
+		v = p2 + (p1 - p2) * edgeInterpVal[idx2 + num];
 		return;
 	}
 	else if(k2 == k1 + 1)
@@ -914,7 +913,7 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 	}
 	else if (k2 == k1 - 1)
 	{
-		v = p1 + (p2 - p1) * (1.0 - edgeInterpVal[idx2 + num * 2]);
+		v = p2 + (p1 - p2) * edgeInterpVal[idx2 + num * 2];
 		return;
 	}
 }
