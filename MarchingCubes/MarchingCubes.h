@@ -141,14 +141,6 @@ public:
 	{
 		return gridPoints[x * resY * resZ + y * resZ + z];
 	}
-	inline Vector3f &getNormalVal(int x, int y, int z)
-	{
-		return normalVals[x * resY * resZ + y * resZ + z];
-	}
-	inline unsigned int &getGridPointComputed(int x, int y, int z)
-	{
-		return gridPointComputed[x * resY * resZ + y * resZ + z];
-	}
 
 	void exportObj(string fileName);
 
@@ -158,12 +150,14 @@ public:
 	int resX, resY, resZ;
 	// Number of cubes in each axis, which is 1 less than number of grid points:
 	int resXm1, resYm1, resZm1;
+
+	int sx, sy, sz;
+	int sx1, sy1, sz1;
+
 	float flipNormalsValue;
 	Vector3f cellDim;
 	vector<float> isoVals;
 	vector<Vector3f> gridPoints;
-	vector<Vector3f> normalVals;
-	vector<unsigned int> gridPointComputed;
 
 	float* isoValArray = nullptr;
 	float* thresCmpArray = nullptr;
@@ -177,6 +171,7 @@ public:
 	// ofVbo boundaryVbo;
 	// ofVbo gridPointsVbo;
 	int vertexCount, maxVertexCount;
+
 
 	Vector3f vertList[12], normList[12];
 

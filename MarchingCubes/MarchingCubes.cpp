@@ -26,21 +26,21 @@ void MarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 	
 	clear();
 
-	//up.set(0,1,0);
-	
-	//float boxVerts[] = {-.5, -.5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5, .5, .5, -.5, .5,};
-	//boundaryVbo.setVertexData( boxVerts, 3, 24, GL_STATIC_DRAW );
 	
 	setResolution( resX, resY, resZ );
 	setMaxVertexCount( _maxVertexCount );
 
 	vertexCount = 0;
 	
-	vertices.resize( maxVertexCount );
-	normals.resize( maxVertexCount );
+	//vertices.resize( maxVertexCount );
+	//normals.resize( maxVertexCount );
 	
-	//vbo.setVertexData( &vertices[0], vertices.size(),GL_DYNAMIC_READ );
-	//vbo.setNormalData( &normals[0], normals.size(), GL_DYNAMIC_READ );
+	int numEdges = resXm1 * (resYm1 + 1) * (resZm1 + 1) + resYm1 * (resXm1 + 1) * (resZm1 + 1) + resZm1 * (resXm1 + 1) * (resYm1 + 1);
+	const int pctInterpEdge = 10;
+	int numEdgesInterp = numEdges * pctInterpEdge / 100;
+
+	vertices.reserve(numEdgesInterp);
+	normals.reserve(numEdgesInterp);
 }
 
 void MarchingCubes::setBlocking(int blockX, int blockY, int blockZ) {
@@ -136,7 +136,6 @@ void MarchingCubes::update_block_new(float _threshold)
 {
 	threshold = _threshold;
 
-	std::fill(gridPointComputed.begin(), gridPointComputed.end(), 0);
 	vertexCount = 0;
 
 
@@ -416,7 +415,7 @@ void MarchingCubes::count_ops(float _threshold, operation_counts& counts) {
 
 void MarchingCubes::polygonise(int i, int j, int k){
 	
-	if( vertexCount+3 < maxVertexCount ){
+	//if( vertexCount+3 < maxVertexCount ){
 		bUpdateMesh = true;
 		/*
 		 Determine the index into the edge table which
@@ -469,19 +468,25 @@ void MarchingCubes::polygonise(int i, int j, int k){
 
 			// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
 			// Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
-			vertices[vertexCount++] = vertList[triTable[cubeindex][i]];
-			vertices[vertexCount++] = vertList[triTable[cubeindex][i+1]];
-			vertices[vertexCount++] = vertList[triTable[cubeindex][i+2]];
+
+			//vertices[vertexCount++] = vertList[triTable[cubeindex][i]];
+			//vertices[vertexCount++] = vertList[triTable[cubeindex][i+1]];
+			//vertices[vertexCount++] = vertList[triTable[cubeindex][i+2]];
+
+			vertices.push_back(vertList[triTable[cubeindex][i]]);
+			vertices.push_back(vertList[triTable[cubeindex][i+1]]);
+			vertices.push_back(vertList[triTable[cubeindex][i+2]]);
+			vertexCount += 3;
 		}
-	}
-	else if(!beenWarned){
-		std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
-		beenWarned = true;
-	}
+	//}
+	//else if(!beenWarned){
+	//	std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
+	//	beenWarned = true;
+	//}
 }
 
 void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ) {
-	if (vertexCount >= maxVertexCount) return;
+	//if (vertexCount >= maxVertexCount) return;
 
 	bUpdateMesh = true;
 
@@ -599,11 +604,11 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 							vertices[vertexCount++] = bVertList[(grid_idx + (bZ+1)) * 3 + 2]; break;
 						}
 					}
-					if (vertexCount >= maxVertexCount && !beenWarned) {
-						std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
-						beenWarned = true;
-						return;
-					}
+					//if (vertexCount >= maxVertexCount && !beenWarned) {
+					//	std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
+					//	beenWarned = true;
+					//	return;
+					//}
 				}
 				idx++;
 			}
@@ -614,7 +619,7 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 
 void MarchingCubes::polygonise_block_new(int i, int j, int k, int bX, int bY, int bZ)
 {
-	if (vertexCount >= maxVertexCount) return;
+	//if (vertexCount >= maxVertexCount) return;
 
 	bUpdateMesh = true;
 
@@ -862,14 +867,16 @@ void MarchingCubes::polygonise_block_new(int i, int j, int k, int bX, int bY, in
 							break;
 						}
 						Vector3f vert  = bVertList[(ii*(bY+1)*(bZ+1) + jj*(bZ+1) + kk)*3 + offset];
-						vertices[vertexCount++] = vert;
+						//vertices[vertexCount++] = vert;
+						vertices.push_back(vert);
+						++vertexCount;
 					}
-					if (vertexCount >= maxVertexCount && !beenWarned)
-					{
-						std::cerr << "ofxMarhingCubes: maximum vertex(" + to_string(maxVertexCount) + ") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
-						beenWarned = true;
-						return;
-					}
+					//if (vertexCount >= maxVertexCount && !beenWarned)
+					//{
+					//	std::cerr << "ofxMarhingCubes: maximum vertex(" + to_string(maxVertexCount) + ") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
+					//	beenWarned = true;
+					//	return;
+					//}
 				}
 				++idx;
 			}
@@ -1335,11 +1342,16 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	resXm1 = resX-1;
 	resYm1 = resY-1;
 	resZm1 = resZ-1;
+
+	sx = resXm1;
+	sy = resYm1;
+	sz = resZm1;
+	sx1 = resX;
+	sy1 = resY;
+	sz1 = resZ;
 	
 	isoVals.resize( resX*resY*resZ );
 	gridPoints.resize( resX*resY*resZ );
-	normalVals.resize( resX*resY*resZ );
-	gridPointComputed.resize( resX*resY*resZ );
 	
 	if (isoValArray != nullptr) delete[] isoValArray;
 	isoValArray = new float[resX * resY * resZ];
@@ -1357,7 +1369,6 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 
 void MarchingCubes::wipeIsoValues( float value){
 	
-	std::fill(gridPointComputed.begin(), gridPointComputed.end(), 0);
 	std::fill(isoVals.begin(), isoVals.end(), value);
 
 }
@@ -1366,7 +1377,6 @@ void MarchingCubes::wipeIsoValues( float value){
 void MarchingCubes::clear(){
 	isoVals.clear();
 	gridPoints.clear();
-	normalVals.clear();
 }
 
 void MarchingCubes::exportObj( string fileName ){
