@@ -63,10 +63,18 @@ void MarchingCubes::setBlocking(int blockX, int blockY, int blockZ) {
 	bx1 = bx + 1;
 	by1 = by + 1;
 	bz1 = bz + 1;
+	nbx = (sx + bx -1) / bx;
+	nby = (sy + by -1) / by;
+	nbz = (sz + bz -1) / bz;
+	nb = nbx * nby * nbz;
 
 	interpVerticesX = new Vector3f[bx*by1*bz1];
 	interpVerticesY = new Vector3f[bx1*by*bz1];
 	interpVerticesZ = new Vector3f[bx1*by1*bz];
+
+	//vertIndicesBoundaryX = new int[by*bz*nb];
+	//vertIndicesBoundaryY = new int[bx*bz*nb];
+	//vertIndicesBoundaryZ = new int[bx*by*nb];
 }
 
 void MarchingCubes::update(float _threshold){
@@ -148,21 +156,16 @@ void MarchingCubes::update_block_new(float _threshold)
 
 	vertexCount = 0;
 
-
-	int x, y, z;
-	for (x = 0; x < resXm1; x += bX)
+	for (int ibx = 0; ibx < nbx; ++ibx)
 	{
-		for (y = 0; y < resYm1; y += bY)
+		for (int iby = 0; iby < nby; ++iby)
 		{
-			for (z = 0; z < resZm1; z += bZ)
+			for (int ibz = 0; ibz < nbz; ++ibz)
 			{
-				// The last block may not be a complete one.
-				int actual_bX = min(bX, resXm1 - x);
-				int actual_bY = min(bY, resYm1 - y);
-				int actual_bZ = min(bZ, resZm1 - z);
-				polygonise_block_new(x, y, z, actual_bX, actual_bY, actual_bZ);
+				polygonise_block_new(ibx, iby, ibz);
 			}
 		}
+
 	}
 }
 void MarchingCubes::update_vec(float _threshold) {
@@ -627,11 +630,20 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 }
 
 
-void MarchingCubes::polygonise_block_new(int i, int j, int k, int bx, int by, int bz)
+void MarchingCubes::polygonise_block_new(int ibx, int iby, int ibz)
 {
-	//if (vertexCount >= maxVertexCount) return;
 
 	bUpdateMesh = true;
+
+	int i = ibx * bx;
+	int j = iby * by;
+	int k = ibz * bz;
+
+	// The rightmost blocks may not be a complete one.
+	// todo: rename, as they shadow member vars.
+	int bx = min(this->bx, sx - i);
+	int by = min(this->by, sy - j);
+	int bz = min(this->bz, sz - k);
 
 	Vector3f dummyN;
 	int idx, x, y, z;
@@ -679,9 +691,11 @@ void MarchingCubes::polygonise_block_new(int i, int j, int k, int bx, int by, in
 	int grid_idx;
 	int edgeIdxX, edgeIdxY, edgeIdxZ;
 	int ii, jj, kk;
-	// todo: Potential duplicate computation on boundary edges, if, e.g., both i==0 and j==0
-	// Could be refined.
+
+	// The left boundary is not shared and must be computed.
+	if(i == 0)
 	{
+		// todo: Potential duplicate computation on boundary edges, if, e.g., both i==0 and j==0
 		x = 0;
 		
 		z = 0;
@@ -719,6 +733,7 @@ void MarchingCubes::polygonise_block_new(int i, int j, int k, int bx, int by, in
 		}
 	}
 
+	if(j == 0)
 	{
 		y = 0;
 
@@ -754,6 +769,7 @@ void MarchingCubes::polygonise_block_new(int i, int j, int k, int bx, int by, in
 		}
 	}
 
+	if(k == 0)
 	{
 		z = 0;
 

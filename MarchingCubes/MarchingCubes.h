@@ -101,7 +101,7 @@ public:
 	void setResolution(int _x = 10, int _y = 10, int _z = 10);
 	void polygonise(int i, int j, int k);
 	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
-	void polygonise_block_new(int i, int j, int k, int bX, int bY, int bZ);
+	void polygonise_block_new(int ibx, int iby, int ibz);
 
 	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ);
@@ -170,6 +170,7 @@ public:
 	int sx1, sy1, sz1;
 	int bx, by, bz;
 	int bx1, by1, bz1;
+	int nbx, nby, nbz, nb;
 
 	float flipNormalsValue;
 	Vector3f cellDim;
@@ -211,8 +212,18 @@ public:
 	int *cubeIndicesInt = nullptr;
 	Vector3f *bVertList = nullptr;
 
+	// Exclude left boundary and include right boundary.
 	Vector3f* interpVerticesX = nullptr;
 	Vector3f* interpVerticesY = nullptr;
 	Vector3f* interpVerticesZ = nullptr;
+
+	// Point to proper positions in interpVerticesX, interpVerticesY and interpVerticesZ respectively.
+	Vector3f* interpVerticesSharedX = nullptr;
+	Vector3f* interpVerticesSharedY = nullptr;
+	Vector3f* interpVerticesSharedZ = nullptr;
+
+	int* vertIndicesBoundaryX = nullptr;
+	int* vertIndicesBoundaryY = nullptr;
+	int* vertIndicesBoundaryZ = nullptr;
 
 };
