@@ -503,16 +503,16 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 		for (y = 0; y < bY; y++) {
 			for (z = 0; z < bZ; z++) {
 				int grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
-				cubeIndices[idx] = 0;
-				cubeIndices[idx] |= thresCmp[grid_idx] ? 1 : 0;
-				cubeIndices[idx] |= thresCmp[grid_idx + (bY+1) * (bZ+1)] ? 2 : 0;
-				cubeIndices[idx] |= thresCmp[grid_idx + (bY+1) * (bZ+1) + (bZ+1)] ? 4 : 0;
-				cubeIndices[idx] |= thresCmp[grid_idx + (bZ+1)] ? 8 : 0;
-				cubeIndices[idx] |= thresCmp[grid_idx + 1] ? 16 : 0;
-				cubeIndices[idx] |= thresCmp[grid_idx + (bY+1) * (bZ+1) + 1] ? 32 : 0;
-				cubeIndices[idx] |= thresCmp[grid_idx + (bY+1) * (bZ+1) + (bZ+1) + 1] ? 64 : 0;
-				cubeIndices[idx] |= thresCmp[grid_idx + (bZ+1) + 1] ? 128 : 0;
-				idx++;
+				int cubeIndex = 0;
+				cubeIndex |= thresCmp[grid_idx] ? 1 : 0;
+				cubeIndex |= thresCmp[grid_idx + (bY+1) * (bZ+1)] ? 2 : 0;
+				cubeIndex |= thresCmp[grid_idx + (bY+1) * (bZ+1) + (bZ+1)] ? 4 : 0;
+				cubeIndex |= thresCmp[grid_idx + (bZ+1)] ? 8 : 0;
+				cubeIndex |= thresCmp[grid_idx + 1] ? 16 : 0;
+				cubeIndex |= thresCmp[grid_idx + (bY+1) * (bZ+1) + 1] ? 32 : 0;
+				cubeIndex |= thresCmp[grid_idx + (bY+1) * (bZ+1) + (bZ+1) + 1] ? 64 : 0;
+				cubeIndex |= thresCmp[grid_idx + (bZ+1) + 1] ? 128 : 0;
+				cubeIndices[idx++] = cubeIndex;
 			}
 		}
 	}
