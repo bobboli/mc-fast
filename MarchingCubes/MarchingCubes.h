@@ -118,6 +118,21 @@ public:
 		bUpdateMesh = true;
 	}
 
+	inline int getEdgeIdxX(int x, int y, int z)
+	{
+		return x * by1 * bz1 + y * bz1 + z;
+	}
+
+	inline int getEdgeIdxY(int x, int y, int z)
+	{
+		return x * by * bz1 + y * bz1 + z;
+	}
+
+	inline int getEdgeIdxZ(int x, int y, int z)
+	{
+		return x * by1 * bz + y * bz + z;
+	}
+
 	bool getSmoothing() { return bSmoothed; }
 	void setSmoothing(bool _bSmooth) { bSmoothed = _bSmooth; }
 
@@ -153,6 +168,8 @@ public:
 
 	int sx, sy, sz;
 	int sx1, sy1, sz1;
+	int bx, by, bz;
+	int bx1, by1, bz1;
 
 	float flipNormalsValue;
 	Vector3f cellDim;
@@ -193,4 +210,9 @@ public:
 	short *cubeIndices = nullptr;
 	int *cubeIndicesInt = nullptr;
 	Vector3f *bVertList = nullptr;
+
+	Vector3f* interpVerticesX = nullptr;
+	Vector3f* interpVerticesY = nullptr;
+	Vector3f* interpVerticesZ = nullptr;
+
 };
