@@ -1079,7 +1079,7 @@ void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& 
 	}
 }
 
-void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n){
+inline void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n){
 	
 	Vector3f& p1 = getGridPoint(i1,j1,k1);
 	Vector3f& p2 = getGridPoint(i2,j2,k2);

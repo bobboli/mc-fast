@@ -24,6 +24,21 @@ void SetSphere(MarchingCubes& mc)
 	}
 }
 
+void SetRandom(MarchingCubes &mc, float _lo=-1.0, float _hi=1.0)
+{
+    for (int i = 0; i < mc.resX; i++)
+	{
+		for (int j = 0; j < mc.resY; j++)
+		{
+			for (int k = 0; k < mc.resZ; k++)
+			{
+				float val = _lo + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX/(_hi-_lo)));
+				mc.setIsoValue(i, j, k, val);
+			}
+		}
+	}
+}
+
 int main(int argc, char** argv)
 {
     if (argc != 6) { printf("usage: <res> <threshold> <blockX> <blockY> <blockZ>. \n"); return -1; }
@@ -36,34 +51,38 @@ int main(int argc, char** argv)
 
     // baseline result
     MarchingCubes mc;
-    mc.setup(res, res, res);
-    SetSphere(mc);
+    mc.setup(res, res, res, 15 * res * res * res);
+    // SetSphere(mc);
+    SetRandom(mc);
     //const float radius = 0.4;
     mc.update(radius);
     mc.exportObj("Sphere");
     
     // blocking result
     MarchingCubes mc_b;
-    mc_b.setup(res, res, res);
+    mc_b.setup(res, res, res, 15 * res * res * res);
     mc_b.setBlocking(blockX, blockY, blockZ);
-    SetSphere(mc_b);
+    // SetSphere(mc_b);
+    SetRandom(mc_b);
     mc_b.update_block(radius);
     mc_b.exportObj("Sphere_block");
     
     // blocking (new) result
 	MarchingCubes mc_b_new;
-	mc_b_new.setup(res, res, res);
+	mc_b_new.setup(res, res, res, 15 * res * res * res);
 	mc_b_new.setBlocking(blockX, blockY, blockZ);
-	SetSphere(mc_b_new);
+	// SetSphere(mc_b_new);
+    SetRandom(mc_b_new);
 	mc_b_new.update_block_new(radius);
 	mc_b_new.exportObj("Sphere_block_new");
 
 
     // vectorization result
     MarchingCubes mc_v;
-    mc_v.setup(res, res, res);
+    mc_v.setup(res, res, res, 15 * res * res * res);
     mc_v.setBlocking(1, 1, 8);
-    SetSphere(mc_v);
+    // SetSphere(mc_v);
+    SetRandom(mc_v);
     mc_v.update_vec(radius);
     mc_v.exportObj("Sphere_vec");
 
