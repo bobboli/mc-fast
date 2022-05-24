@@ -893,6 +893,209 @@ void MarchingCubes::polygonise_block_new(int ibx, int iby, int ibz)
 }
 
 
+void MarchingCubes::polygonise_level(int level)
+{
+
+	bUpdateMesh = true;
+	/*
+	 Determine the index into the edge table which
+	 tells us which vertices are inside of the surface
+	 */
+
+	bool* thresCmpOld, *thresCmpNew;
+	Vector3f* vertInterpYOld, *vertInterpYNew;
+	Vector3f* vertInterpZOld, *vertInterpZNew;
+
+	if (level % 2 == 0)
+	{
+		thresCmpOld = thresCmpLevel;
+		thresCmpNew = thresCmpLevel + sy1 * sz1;
+
+		vertInterpYOld = vertInterpY;
+		vertInterpYNew = vertInterpY + sy*sz1;
+		vertInterpZOld = vertInterpZ;
+		vertInterpZNew = vertInterpZ + sy1*sz;
+	}
+	else
+	{
+		thresCmpNew = thresCmpLevel;
+		thresCmpOld = thresCmpLevel + sy1 * sz1;
+
+		vertInterpYNew = vertInterpY;
+		vertInterpYOld = vertInterpY + sy * sz1;
+		vertInterpZNew = vertInterpZ;
+		vertInterpZOld = vertInterpZ + sy1 * sz;
+	}
+
+	int x = level;
+	int x1 = x + 1;
+
+	// Threshold computing
+	if (level == 0)
+	{
+		int iGrid = 0;
+		for (int y = 0; y < sy1; ++y)
+		{
+			for (int z = 0; z < sz1; ++z)
+			{
+				thresCmpOld[iGrid] = isoVals[iGrid] > threshold;
+				++iGrid;
+			}
+		}
+	}
+
+	{
+		int iGrid = 0;
+		int iIsoVal = x1*sy1*sz1;
+		for (int y = 0; y < sy1; ++y)
+		{
+			for (int z = 0; z < sz1; ++z)
+			{
+				thresCmpNew[iGrid] = isoVals[iIsoVal] > threshold;
+				++iGrid;
+				++iIsoVal;
+			}
+		}
+	}
+
+	// Cube index computation
+	{
+
+		int iCube = 0;
+		for (int y = 0; y < sy; ++y)
+		{
+			int y1 = y + 1;
+			for (int z = 0; z < sz; ++z)
+			{
+				int z1 = z + 1;
+
+				int cubeIndex = 0;
+				// todo: accessing of isoVals could be further optimized without using getIsoValue
+				cubeIndex |= thresCmpOld[y * sz1 + z] ? 1 : 0;
+				cubeIndex |= thresCmpNew[y * sz1 + z] ? 2 : 0;
+				cubeIndex |= thresCmpNew[(y + 1) * sz1 + z] ? 4 : 0;
+				cubeIndex |= thresCmpOld[(y + 1) * sz1 + z] ? 8 : 0;
+				cubeIndex |= thresCmpOld[y * sz1 + (z + 1)] ? 16 : 0;
+				cubeIndex |= thresCmpNew[y * sz1 + (z + 1)] ? 32 : 0;
+				cubeIndex |= thresCmpNew[(y + 1) * sz1 + (z + 1)] ? 64 : 0;
+				cubeIndex |= thresCmpOld[(y + 1) * sz1 + (z + 1)] ? 128 : 0;
+				cubeIndexLevel[iCube++] = cubeIndex;
+			}
+		}
+	}
+
+	// Vertex interpolation
+	Vector3f dummyN;
+
+	// X edges
+	{
+		{
+			if (edgeTable[cubeIndexLevel[0]] & 1)	vertexInterp(threshold, x, 0, 0, x + 1, 0, 0, vertInterpX[0], dummyN);
+		}
+
+		for (int z = 0; z < sz; ++z)
+		{
+			if (edgeTable[cubeIndexLevel[z]] & 16)	vertexInterp(threshold, x, 0, z+1, x + 1, 0, z+1, vertInterpX[z+1], dummyN);
+		}
+
+		for (int y = 0; y < sy; ++y)
+		{
+			if (edgeTable[cubeIndexLevel[y*sz]] & 4)	vertexInterp(threshold, x, y+1, 0, x + 1, y+1, 0, vertInterpX[(y+1)*sz1], dummyN);
+		}
+
+
+		for (int y = 0; y < sy; ++y)
+		{
+			for (int z = 0; z < sz; ++z)
+			{
+				if (edgeTable[cubeIndexLevel[y * sz + z]] & 64)	vertexInterp(threshold, x, y + 1, z + 1, x + 1, y + 1, z + 1, vertInterpX[(y + 1) * sz1 + (z + 1)], dummyN);
+			}
+		}
+	}
+
+	// Y and Z edges
+	{
+		for (int z = 0; z < sz; ++z)
+		{
+			if (edgeTable[cubeIndexLevel[z]] & 512)	vertexInterp(threshold, x+1, 0, z, x + 1, 0, z+1, vertInterpZNew[z], dummyN);
+		}
+
+
+		for (int y = 0; y < sy; ++y)
+		{
+			if (edgeTable[cubeIndexLevel[y*sz]] & 2)	vertexInterp(threshold, x+1, y, 0, x + 1, y+1, 0, vertInterpYNew[y*sz1], dummyN);
+		}
+
+		for (int y = 0; y < sy; ++y)
+		{
+			for (int z = 0; z < sz; ++z)
+			{
+				int edgeIndex = edgeTable[cubeIndexLevel[y * sz + z]];
+				if (edgeIndex & 32)  vertexInterp(threshold, x + 1, y, z + 1, x + 1, y + 1, z + 1, vertInterpYNew[y*sz1+(z+1)], dummyN);
+				if (edgeIndex & 1024)  vertexInterp(threshold, x + 1, y+1, z, x + 1, y + 1, z + 1, vertInterpZNew[(y+1)*sz+z], dummyN);
+			}
+
+		}
+	}
+
+	// Assembly triangles
+	for (int y = 0; y < sy; ++y)
+	{
+		for (int z = 0; z < sz; ++z)
+		{
+			int iCube = y * sz + z;
+			for (int ti = 0; triTable[cubeIndexLevel[iCube]][ti] != -1; ti += 3)
+			{
+				for (int tj = 0; tj < 3; tj++)
+				{
+					Vector3f vert;
+					switch (triTable[cubeIndexLevel[iCube]][ti + tj])
+					{
+					case 0: // i,j,k - i1,j,k
+						vert = vertInterpX[y * sz1 + z];
+						break;
+					case 1: // i1,j,k - i1,j1,k
+						vert = vertInterpYNew[y * sz1 + z];
+						break;
+					case 2: // i,j1,k - i1,j1,k
+						vert = vertInterpX[(y+1) * sz1 + z];
+						break;
+					case 3: // i,j,k - i,j1,k
+						vert = vertInterpYOld[y * sz1 + z];
+						break;
+					case 4: // i,j,k1 - i1,j,k1
+						vert = vertInterpX[y * sz1 + (z+1)];
+						break;
+					case 5: // i1,j,k1 - i1,j1,k1
+						vert = vertInterpYNew[y * sz1 + (z+1)];
+						break;
+					case 6: // i,j1,k1 - i1,j1,k1
+						vert = vertInterpX[(y+1) * sz1 + (z+1)];
+						break;
+					case 7: // i,j,k1 - i,j1,k1
+						vert = vertInterpYOld[y * sz1 + (z+1)];
+						break;
+					case 8: // i,j,k - i,j,k1
+						vert = vertInterpZOld[y * sz + z];
+						break;
+					case 9: // i1,j,k - i1,j,k1
+						vert = vertInterpZNew[y * sz + z];
+						break;
+					case 10: // i1,j1,k - i1,j1,k1
+						vert = vertInterpZNew[(y+1) * sz + z];
+						break;
+					case 11: // i,j1,k - i,j1,k1
+						vert = vertInterpZOld[(y+1) * sz + z];
+						break;
+					}
+					vertices.push_back(vert);
+					++vertexCount;
+				}
+			}
+		}
+	}
+}
+
 void MarchingCubes::polygonise_vec(int i, int j, int k, int bX, int bY, int bZ) {
 	if (vertexCount >= maxVertexCount) return;
 
@@ -1370,6 +1573,14 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	edgeInterpVal = new float[resX * resY * resZ * 3];
 
 	setGridPoints( resX*10, resY*10, resZ*10 );
+
+	// Level-by-level
+	thresCmpLevel = new bool[2 * sy1 * sz1];
+	cubeIndexLevel = new int[sy * sz];
+
+	vertInterpX = new Vector3f[sy1 * sz1];
+	vertInterpY = new Vector3f[sy*sz1*2];
+	vertInterpZ = new Vector3f[sy1*sz*2];
 }
 
 void MarchingCubes::wipeIsoValues( float value){

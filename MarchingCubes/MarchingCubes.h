@@ -90,6 +90,21 @@ public:
 	void update_vec_16bit(float _threshold);
 	void update_block_new(float _threshold);
 	void update_block_new() { update_block_new(threshold); }
+
+	void MarchingCubes::update_level(float _threshold)
+	{
+		threshold = _threshold;
+
+		vertexCount = 0;
+
+		for (int x = 0; x < sx; ++x)
+		{
+			polygonise_level(x);
+		}
+
+	}
+	void update_level() { update_level(threshold); }
+
 	void count_ops(float _threshold, operation_counts &counts);
 
 	// void draw( GLenum renderType = GL_TRIANGLES );
@@ -102,6 +117,7 @@ public:
 	void polygonise(int i, int j, int k);
 	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_block_new(int ibx, int iby, int ibz);
+	void polygonise_level(int level);
 
 	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ);
@@ -217,13 +233,11 @@ public:
 	Vector3f* interpVerticesY = nullptr;
 	Vector3f* interpVerticesZ = nullptr;
 
-	// Point to proper positions in interpVerticesX, interpVerticesY and interpVerticesZ respectively.
-	Vector3f* interpVerticesSharedX = nullptr;
-	Vector3f* interpVerticesSharedY = nullptr;
-	Vector3f* interpVerticesSharedZ = nullptr;
 
-	int* vertIndicesBoundaryX = nullptr;
-	int* vertIndicesBoundaryY = nullptr;
-	int* vertIndicesBoundaryZ = nullptr;
-
+	// Level-by-level 
+	bool* thresCmpLevel;
+	int* cubeIndexLevel;
+	Vector3f* vertInterpX;
+	Vector3f* vertInterpY;
+	Vector3f* vertInterpZ;
 };
