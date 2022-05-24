@@ -101,7 +101,7 @@ public:
 	void setResolution(int _x = 10, int _y = 10, int _z = 10);
 	void polygonise(int i, int j, int k);
 	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
-	void polygonise_block_new(int i, int j, int k, int bX, int bY, int bZ);
+	void polygonise_block_new(int ibx, int iby, int ibz);
 
 	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ);
@@ -116,6 +116,21 @@ public:
 	{
 		getIsoValue(x, y, z) += value;
 		bUpdateMesh = true;
+	}
+
+	inline int getEdgeIdxX(int x, int y, int z)
+	{
+		return x * by1 * bz1 + y * bz1 + z;
+	}
+
+	inline int getEdgeIdxY(int x, int y, int z)
+	{
+		return x * by * bz1 + y * bz1 + z;
+	}
+
+	inline int getEdgeIdxZ(int x, int y, int z)
+	{
+		return x * by1 * bz + y * bz + z;
 	}
 
 	bool getSmoothing() { return bSmoothed; }
@@ -141,14 +156,6 @@ public:
 	{
 		return gridPoints[x * resY * resZ + y * resZ + z];
 	}
-	inline Vector3f &getNormalVal(int x, int y, int z)
-	{
-		return normalVals[x * resY * resZ + y * resZ + z];
-	}
-	inline unsigned int &getGridPointComputed(int x, int y, int z)
-	{
-		return gridPointComputed[x * resY * resZ + y * resZ + z];
-	}
 
 	void exportObj(string fileName);
 
@@ -158,12 +165,17 @@ public:
 	int resX, resY, resZ;
 	// Number of cubes in each axis, which is 1 less than number of grid points:
 	int resXm1, resYm1, resZm1;
+
+	int sx, sy, sz;
+	int sx1, sy1, sz1;
+	int bx, by, bz;
+	int bx1, by1, bz1;
+	int nbx, nby, nbz, nb;
+
 	float flipNormalsValue;
 	Vector3f cellDim;
 	vector<float> isoVals;
 	vector<Vector3f> gridPoints;
-	vector<Vector3f> normalVals;
-	vector<unsigned int> gridPointComputed;
 
 	float* isoValArray = nullptr;
 	float* thresCmpArray = nullptr;
@@ -177,6 +189,7 @@ public:
 	// ofVbo boundaryVbo;
 	// ofVbo gridPointsVbo;
 	int vertexCount, maxVertexCount;
+
 
 	Vector3f vertList[12], normList[12];
 
@@ -198,4 +211,19 @@ public:
 	short *cubeIndices = nullptr;
 	int *cubeIndicesInt = nullptr;
 	Vector3f *bVertList = nullptr;
+
+	// Exclude left boundary and include right boundary.
+	Vector3f* interpVerticesX = nullptr;
+	Vector3f* interpVerticesY = nullptr;
+	Vector3f* interpVerticesZ = nullptr;
+
+	// Point to proper positions in interpVerticesX, interpVerticesY and interpVerticesZ respectively.
+	Vector3f* interpVerticesSharedX = nullptr;
+	Vector3f* interpVerticesSharedY = nullptr;
+	Vector3f* interpVerticesSharedZ = nullptr;
+
+	int* vertIndicesBoundaryX = nullptr;
+	int* vertIndicesBoundaryY = nullptr;
+	int* vertIndicesBoundaryZ = nullptr;
+
 };

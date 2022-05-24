@@ -26,21 +26,21 @@ void MarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 	
 	clear();
 
-	//up.set(0,1,0);
-	
-	//float boxVerts[] = {-.5, -.5, -.5, .5, -.5, -.5, -.5, .5, -.5, .5, .5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, .5, .5, -.5, .5, -.5, .5, -.5, .5, .5, -.5, -.5, .5, .5, .5, .5, .5, -.5, -.5, .5, -.5, -.5, -.5, -.5, -.5, .5, .5, -.5, -.5, .5, .5, .5, -.5, .5, -.5, -.5, .5, .5, .5, .5, -.5, .5,};
-	//boundaryVbo.setVertexData( boxVerts, 3, 24, GL_STATIC_DRAW );
 	
 	setResolution( resX, resY, resZ );
 	setMaxVertexCount( _maxVertexCount );
 
 	vertexCount = 0;
 	
-	vertices.resize( maxVertexCount );
-	normals.resize( maxVertexCount );
+	//vertices.resize( maxVertexCount );
+	//normals.resize( maxVertexCount );
 	
-	//vbo.setVertexData( &vertices[0], vertices.size(),GL_DYNAMIC_READ );
-	//vbo.setNormalData( &normals[0], normals.size(), GL_DYNAMIC_READ );
+	int numEdges = resXm1 * (resYm1 + 1) * (resZm1 + 1) + resYm1 * (resXm1 + 1) * (resZm1 + 1) + resZm1 * (resXm1 + 1) * (resYm1 + 1);
+	const int pctInterpEdge = 10;
+	int numEdgesInterp = numEdges * pctInterpEdge / 100;
+
+	vertices.reserve(numEdgesInterp);
+	normals.reserve(numEdgesInterp);
 }
 
 void MarchingCubes::setBlocking(int blockX, int blockY, int blockZ) {
@@ -57,6 +57,24 @@ void MarchingCubes::setBlocking(int blockX, int blockY, int blockZ) {
 	cubeIndicesInt = new int[bX * bY * bZ];
 	bVertList = new Vector3f[(bX + 1) * (bY + 1) * (bZ + 1) * 3];
 
+	bx = bX;
+	by = bY;
+	bz = bZ;
+	bx1 = bx + 1;
+	by1 = by + 1;
+	bz1 = bz + 1;
+	nbx = (sx + bx -1) / bx;
+	nby = (sy + by -1) / by;
+	nbz = (sz + bz -1) / bz;
+	nb = nbx * nby * nbz;
+
+	interpVerticesX = new Vector3f[bx*by1*bz1];
+	interpVerticesY = new Vector3f[bx1*by*bz1];
+	interpVerticesZ = new Vector3f[bx1*by1*bz];
+
+	//vertIndicesBoundaryX = new int[by*bz*nb];
+	//vertIndicesBoundaryY = new int[bx*bz*nb];
+	//vertIndicesBoundaryZ = new int[bx*by*nb];
 }
 
 void MarchingCubes::update(float _threshold){
@@ -136,24 +154,18 @@ void MarchingCubes::update_block_new(float _threshold)
 {
 	threshold = _threshold;
 
-	std::fill(gridPointComputed.begin(), gridPointComputed.end(), 0);
 	vertexCount = 0;
 
-
-	int x, y, z;
-	for (x = 0; x < resXm1; x += bX)
+	for (int ibx = 0; ibx < nbx; ++ibx)
 	{
-		for (y = 0; y < resYm1; y += bY)
+		for (int iby = 0; iby < nby; ++iby)
 		{
-			for (z = 0; z < resZm1; z += bZ)
+			for (int ibz = 0; ibz < nbz; ++ibz)
 			{
-				// The last block may not be a complete one.
-				int actual_bX = min(bX, resXm1 - x);
-				int actual_bY = min(bY, resYm1 - y);
-				int actual_bZ = min(bZ, resZm1 - z);
-				polygonise_block_new(x, y, z, actual_bX, actual_bY, actual_bZ);
+				polygonise_block_new(ibx, iby, ibz);
 			}
 		}
+
 	}
 }
 void MarchingCubes::update_vec(float _threshold) {
@@ -416,7 +428,7 @@ void MarchingCubes::count_ops(float _threshold, operation_counts& counts) {
 
 void MarchingCubes::polygonise(int i, int j, int k){
 	
-	if( vertexCount+3 < maxVertexCount ){
+	//if( vertexCount+3 < maxVertexCount ){
 		bUpdateMesh = true;
 		/*
 		 Determine the index into the edge table which
@@ -469,19 +481,25 @@ void MarchingCubes::polygonise(int i, int j, int k){
 
 			// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
 			// Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
-			vertices[vertexCount++] = vertList[triTable[cubeindex][i]];
-			vertices[vertexCount++] = vertList[triTable[cubeindex][i+1]];
-			vertices[vertexCount++] = vertList[triTable[cubeindex][i+2]];
+
+			//vertices[vertexCount++] = vertList[triTable[cubeindex][i]];
+			//vertices[vertexCount++] = vertList[triTable[cubeindex][i+1]];
+			//vertices[vertexCount++] = vertList[triTable[cubeindex][i+2]];
+
+			vertices.push_back(vertList[triTable[cubeindex][i]]);
+			vertices.push_back(vertList[triTable[cubeindex][i+1]]);
+			vertices.push_back(vertList[triTable[cubeindex][i+2]]);
+			vertexCount += 3;
 		}
-	}
-	else if(!beenWarned){
-		std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
-		beenWarned = true;
-	}
+	//}
+	//else if(!beenWarned){
+	//	std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
+	//	beenWarned = true;
+	//}
 }
 
 void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ) {
-	if (vertexCount >= maxVertexCount) return;
+	//if (vertexCount >= maxVertexCount) return;
 
 	bUpdateMesh = true;
 
@@ -599,11 +617,11 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 							vertices[vertexCount++] = bVertList[(grid_idx + (bZ+1)) * 3 + 2]; break;
 						}
 					}
-					if (vertexCount >= maxVertexCount && !beenWarned) {
-						std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
-						beenWarned = true;
-						return;
-					}
+					//if (vertexCount >= maxVertexCount && !beenWarned) {
+					//	std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
+					//	beenWarned = true;
+					//	return;
+					//}
 				}
 				idx++;
 			}
@@ -612,11 +630,20 @@ void MarchingCubes::polygonise_block(int i, int j, int k, int bX, int bY, int bZ
 }
 
 
-void MarchingCubes::polygonise_block_new(int i, int j, int k, int bX, int bY, int bZ)
+void MarchingCubes::polygonise_block_new(int ibx, int iby, int ibz)
 {
-	if (vertexCount >= maxVertexCount) return;
 
 	bUpdateMesh = true;
+
+	int i = ibx * bx;
+	int j = iby * by;
+	int k = ibz * bz;
+
+	// The rightmost blocks may not be a complete one.
+	// todo: rename, as they shadow member vars.
+	int bx = min(this->bx, sx - i);
+	int by = min(this->by, sy - j);
+	int bz = min(this->bz, sz - k);
 
 	Vector3f dummyN;
 	int idx, x, y, z;
@@ -625,11 +652,11 @@ void MarchingCubes::polygonise_block_new(int i, int j, int k, int bX, int bY, in
 
 	// For the current version, thresCmp and vertexInterp are still duplicated at boundary.
 	// todo: fetch thresCmp result of the neighboring result, or duplicate the computation to reduce memory access?
-	for (x = i; x <= i + bX; ++x)
+	for (x = i; x <= i + bx; ++x)
 	{
-		for (y = j; y <= j + bY; ++y)
+		for (y = j; y <= j + by; ++y)
 		{
-			for (z = k; z <= k + bZ; ++z)
+			for (z = k; z <= k + bz; ++z)
 			{
 				thresCmp[idx++] = getIsoValue(x, y, z) > threshold;
 			}
@@ -637,23 +664,23 @@ void MarchingCubes::polygonise_block_new(int i, int j, int k, int bX, int bY, in
 	}
 
 	idx = 0;
-	for (x = 0; x < bX; ++x)
+	for (x = 0; x < bx; ++x)
 	{
-		for (y = 0; y < bY; ++y)
+		for (y = 0; y < by; ++y)
 		{
-			for (z = 0; z < bZ; ++z)
+			for (z = 0; z < bz; ++z)
 			{
-				int grid_idx = x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z;
+				int grid_idx = x * (by + 1) * (bz + 1) + y * (bz + 1) + z;
 				
 				int cubeIdx = 0;
 				cubeIdx |= thresCmp[grid_idx] ? 1 : 0;
-				cubeIdx |= thresCmp[grid_idx + (bY + 1) * (bZ + 1)] ? 2 : 0;
-				cubeIdx |= thresCmp[grid_idx + (bY + 1) * (bZ + 1) + (bZ + 1)] ? 4 : 0;
-				cubeIdx |= thresCmp[grid_idx + (bZ + 1)] ? 8 : 0;
+				cubeIdx |= thresCmp[grid_idx + (by + 1) * (bz + 1)] ? 2 : 0;
+				cubeIdx |= thresCmp[grid_idx + (by + 1) * (bz + 1) + (bz + 1)] ? 4 : 0;
+				cubeIdx |= thresCmp[grid_idx + (bz + 1)] ? 8 : 0;
 				cubeIdx |= thresCmp[grid_idx + 1] ? 16 : 0;
-				cubeIdx |= thresCmp[grid_idx + (bY + 1) * (bZ + 1) + 1] ? 32 : 0;
-				cubeIdx |= thresCmp[grid_idx + (bY + 1) * (bZ + 1) + (bZ + 1) + 1] ? 64 : 0;
-				cubeIdx |= thresCmp[grid_idx + (bZ + 1) + 1] ? 128 : 0;
+				cubeIdx |= thresCmp[grid_idx + (by + 1) * (bz + 1) + 1] ? 32 : 0;
+				cubeIdx |= thresCmp[grid_idx + (by + 1) * (bz + 1) + (bz + 1) + 1] ? 64 : 0;
+				cubeIdx |= thresCmp[grid_idx + (bz + 1) + 1] ? 128 : 0;
 
 				cubeIndices[idx] = cubeIdx;
 				++idx;
@@ -662,214 +689,202 @@ void MarchingCubes::polygonise_block_new(int i, int j, int k, int bX, int bY, in
 	}
 
 	int grid_idx;
+	int edgeIdxX, edgeIdxY, edgeIdxZ;
 	int ii, jj, kk;
-	// todo: Potential duplicate computation on boundary edges, if, e.g., both i==0 and j==0
-	// Could be refined.
+
+	// The left boundary is not shared and must be computed.
+	if(i == 0)
 	{
+		// todo: Potential duplicate computation on boundary edges, if, e.g., both i==0 and j==0
 		x = 0;
 		
 		z = 0;
-		for (y = 0; y < bY; ++y)
+		for (y = 0; y < by; ++y)
 		{
 			// todo: Index computation could be optimized using code motion.
 			// todo: using bVertList, or using a dynamically increasing container (std::vector)?
-			idx = y * bZ;
-			grid_idx = (y+1) * (bZ + 1);
+			idx = y * bz;
+			edgeIdxY = y * bz1;
 			ii = x+i, jj = y + j, kk = k;
-			if (edgeTable[cubeIndices[idx]] & 8)		vertexInterp(threshold, ii, jj, kk, ii, jj+1, kk, bVertList[grid_idx * 3+1], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 8)		vertexInterp(threshold, ii, jj, kk, ii, jj+1, kk, interpVerticesY[edgeIdxY], dummyN);
 		}
 		
 		y = 0;
-		for (z = 0; z < bZ; ++z)
+		for (z = 0; z < bz; ++z)
 		{
 			idx = z;
-			grid_idx = z+1;
+			edgeIdxZ = z;
 			ii = x + i, jj = y + j, kk = z + k;
-			if (edgeTable[cubeIndices[idx]] & 256)		vertexInterp(threshold, ii, jj, kk, ii, jj, kk+1, bVertList[grid_idx * 3 + 2], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 256)		vertexInterp(threshold, ii, jj, kk, ii, jj, kk+1, interpVerticesZ[edgeIdxZ], dummyN);
 		}
 
-		for (y = 0; y < bY; ++y)
+		for (y = 0; y < by; ++y)
 		{
-			for (z = 0; z < bZ; ++z)
+			for (z = 0; z < bz; ++z)
 			{
-				idx = y * bZ + z;
-				grid_idx = (y + 1) * (bZ + 1) + (z + 1);
+				idx = y * bz + z;
+				grid_idx = (y + 1) * (bz + 1) + (z + 1);
+				edgeIdxY = y * bz1 + (z+1);
+				edgeIdxZ = (y+1)*bz + z;
 				ii = x + i, jj = y + j, kk = z + k;
-				if (edgeTable[cubeIndices[idx]] & 128)		vertexInterp(threshold, ii, jj, kk+1, ii, jj+1, kk+1, bVertList[grid_idx * 3 + 1], dummyN);
-				if (edgeTable[cubeIndices[idx]] & 2048)		vertexInterp(threshold, ii, jj+1, kk, ii, jj+1, kk+1, bVertList[grid_idx * 3 + 2], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 128)		vertexInterp(threshold, ii, jj, kk+1, ii, jj+1, kk+1, interpVerticesY[edgeIdxY], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 2048)		vertexInterp(threshold, ii, jj+1, kk, ii, jj+1, kk+1, interpVerticesZ[edgeIdxZ], dummyN);
 			}
 		}
 	}
 
+	if(j == 0)
 	{
 		y = 0;
 
 		z = 0;
-		for (x = 0; x < bX; ++x)
+		for (x = 0; x < bx; ++x)
 		{
-			idx = x * bY * bZ;
-			grid_idx = (x+1) * (bY + 1) * (bZ + 1);
+			idx = x * by * bz;
+			edgeIdxX = x * by1 * bz1;
 			ii = x + i, jj = y + j, kk = z + k;
-			if (edgeTable[cubeIndices[idx]] & 1)		vertexInterp(threshold, ii, jj, kk, ii+1, jj, kk, bVertList[grid_idx * 3], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 1)		vertexInterp(threshold, ii, jj, kk, ii+1, jj, kk, interpVerticesX[edgeIdxX], dummyN);
 		}
 
 		x = 0;
-		for (z = 0; z < bZ; ++z)
+		for (z = 0; z < bz; ++z)
 		{
 			idx = z;
-			grid_idx = (z + 1);
+			edgeIdxZ = z;
 			ii = x + i, jj = y + j, kk = z + k;
-			if (edgeTable[cubeIndices[idx]] & 256)		vertexInterp(threshold, ii, jj, kk, ii, jj, kk + 1, bVertList[grid_idx * 3 + 2], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 256)		vertexInterp(threshold, ii, jj, kk, ii, jj, kk + 1, interpVerticesZ[edgeIdxZ], dummyN);
 		}
 
-		for (x = 0; x < bX; ++x)
+		for (x = 0; x < bx; ++x)
 		{
-			for (z = 0; z < bZ; ++z)
+			for (z = 0; z < bz; ++z)
 			{
-				idx = x * bY * bZ + z;
-				grid_idx = (x+1) * (bY + 1) * (bZ + 1) + (z + 1);
+				idx = x * by * bz + z;
+				edgeIdxX = x * by1 * bz1 + (z+1);
+				edgeIdxZ = (x+1)*by1*bz + z;
 				ii = x + i, jj = y + j, kk = z + k;
-				if (edgeTable[cubeIndices[idx]] & 16)		vertexInterp(threshold, ii, jj, kk+1, ii+1, jj, kk+1, bVertList[grid_idx * 3], dummyN);
-				if (edgeTable[cubeIndices[idx]] & 512)		vertexInterp(threshold, ii+1, jj, kk, ii+1, jj, kk+1, bVertList[grid_idx * 3 + 2], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 16)		vertexInterp(threshold, ii, jj, kk+1, ii+1, jj, kk+1, interpVerticesX[edgeIdxX], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 512)		vertexInterp(threshold, ii+1, jj, kk, ii+1, jj, kk+1, interpVerticesZ[edgeIdxZ], dummyN);
 			}
 		}
 	}
 
+	if(k == 0)
 	{
 		z = 0;
 
 		y = 0;
-		for (x = 0; x < bX; ++x)
+		for (x = 0; x < bx; ++x)
 		{
-			idx = x * bY * bZ;
-			grid_idx = (x + 1) * (bY + 1) * (bZ + 1);
+			idx = x * by * bz;
+			edgeIdxX = x * by1 * bz1;
 			ii = x + i, jj = y + j, kk = z + k;
-			if (edgeTable[cubeIndices[idx]] & 1)		vertexInterp(threshold, ii, jj, kk, ii + 1, jj, kk, bVertList[grid_idx * 3], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 1)		vertexInterp(threshold, ii, jj, kk, ii + 1, jj, kk, interpVerticesX[edgeIdxX], dummyN);
 		}
 
 		x = 0;
-		for (y = 0; y < bY; ++y)
+		for (y = 0; y < by; ++y)
 		{
-			idx = y * bZ;
-			grid_idx = (y+1) * (bZ + 1);
+			idx = y * bz;
+			edgeIdxY = y * bz1;
 			ii = x + i, jj = y + j, kk = z + k;
-			if (edgeTable[cubeIndices[idx]] & 8)		vertexInterp(threshold, ii, jj, kk, ii, jj+1, kk, bVertList[grid_idx * 3 + 1], dummyN);
+			if (edgeTable[cubeIndices[idx]] & 8)		vertexInterp(threshold, ii, jj, kk, ii, jj+1, kk, interpVerticesY[edgeIdxY], dummyN);
 		}
 
-		for (x = 0; x < bX; ++x)
+		for (x = 0; x < bx; ++x)
 		{
-			for (y = 0; y < bY; ++y)
+			for (y = 0; y < by; ++y)
 			{
-				idx = x * bY * bZ + y * bZ;
-				grid_idx = (x + 1) * (bY + 1) * (bZ + 1) + (y+1) * (bZ + 1);
+				idx = x * by * bz + y * bz;
+				edgeIdxX = x * by1 * bz1 + (y+1) * bz1;
+				edgeIdxY = (x+1)*by*bz1 + y * bz1;
 				ii = x + i, jj = y + j, kk = z + k;
-				if (edgeTable[cubeIndices[idx]] & 2)		vertexInterp(threshold, ii+1, jj, kk, ii+1, jj+1, kk, bVertList[grid_idx * 3 + 1], dummyN);
-				if (edgeTable[cubeIndices[idx]] & 4)		vertexInterp(threshold, ii, jj+1, kk, ii+1, jj+1, kk, bVertList[grid_idx * 3], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 2)		vertexInterp(threshold, ii+1, jj, kk, ii+1, jj+1, kk, interpVerticesY[edgeIdxX], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 4)		vertexInterp(threshold, ii, jj+1, kk, ii+1, jj+1, kk, interpVerticesX[edgeIdxX], dummyN);
 			}
 		}
 	}
 
 
-	for (x = 0; x < bX; ++x)
+	for (x = 0; x < bx; ++x)
 	{
-		for (y = 0; y < bY; ++y)
+		for (y = 0; y < by; ++y)
 		{
-			for (z = 0; z < bZ; ++z)
+			for (z = 0; z < bz; ++z)
 			{
-				idx = x * bY * bZ + y * bZ + z;
-				grid_idx = (x+1) * (bY + 1) * (bZ + 1) + (y+1) * (bZ + 1) + (z+1);
+				idx = x * by * bz + y * bz + z;
+				grid_idx = (x+1) * (by + 1) * (bz + 1) + (y+1) * (bz + 1) + (z+1);
+				edgeIdxX = x * by1 * bz1 + (y+1) * bz1 + (z+1);
+				edgeIdxY = (x+1) * by*bz1 + y * bz1 + (z+1);
+				edgeIdxZ = (x + 1) * by1 * bz + (y + 1) * bz + z;
 				ii = x + i, jj = y + j, kk = z + k;
-				if (edgeTable[cubeIndices[idx]] & 32)		vertexInterp(threshold, ii+1, jj, kk+1, ii+1, jj+1, kk+1, bVertList[grid_idx * 3 + 1], dummyN);
-				if (edgeTable[cubeIndices[idx]] & 64)		vertexInterp(threshold, ii, jj+1, kk+1, ii+1, jj+1, kk+1, bVertList[grid_idx * 3], dummyN);
-				if (edgeTable[cubeIndices[idx]] & 1024)		vertexInterp(threshold, ii+1, jj+1, kk, ii+1, jj+1, kk+1, bVertList[grid_idx * 3 + 2], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 32)		vertexInterp(threshold, ii+1, jj, kk+1, ii+1, jj+1, kk+1, interpVerticesY[edgeIdxY], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 64)		vertexInterp(threshold, ii, jj+1, kk+1, ii+1, jj+1, kk+1, interpVerticesX[edgeIdxX], dummyN);
+				if (edgeTable[cubeIndices[idx]] & 1024)		vertexInterp(threshold, ii+1, jj+1, kk, ii+1, jj+1, kk+1, interpVerticesZ[edgeIdxZ], dummyN);
 			}
 		}
 	}
 
 	idx = 0;
-	for (x = 0; x < bX; ++x)
+	for (x = 0; x < bx; ++x)
 	{
-		for (y = 0; y < bY; ++y)
+		for (y = 0; y < by; ++y)
 		{
-			for (z = 0; z < bZ; ++z)
+			for (z = 0; z < bz; ++z)
 			{
 				for (int ti = 0; triTable[cubeIndices[idx]][ti] != -1; ti += 3)
 				{
 					for (int tj = 0; tj < 3; tj++)
 					{
-						int offset;
+						Vector3f vert;
 						switch (triTable[cubeIndices[idx]][ti + tj])
 						{
 						case 0: // i,j,k - i1,j,k
-							//idxBVertices = ((x + 1) * (bY + 1) * (bZ + 1) + y * (bZ + 1) + z) * 3;
-							ii = x + 1, jj = y, kk = z;
-							offset = 0;
+							vert = interpVerticesX[getEdgeIdxX(x, y, z)];
 							break;
 						case 1: // i1,j,k - i1,j1,k
-							//idxBVertices = ((x + 1) * (bY + 1) * (bZ + 1) + (y+1) * (bZ + 1) + z) * 3 + 1;
-							ii = x + 1, jj = y+1, kk = z;
-							offset = 1;
+							vert = interpVerticesY[getEdgeIdxY(x + 1, y, z)];
 							break;
 						case 2: // i,j1,k - i1,j1,k
-							//idxBVertices = ((x + 1) * (bY + 1) * (bZ + 1) + (y+1) * (bZ + 1) + z) * 3;
-							ii = x + 1, jj = y+1, kk = z;
-							offset = 0;
+							vert = interpVerticesX[getEdgeIdxX(x, y + 1, z)];
 							break;
 						case 3: // i,j,k - i,j1,k
-							//idxBVertices = (x  * (bY + 1) * (bZ + 1) + (y + 1) * (bZ + 1) + z) * 3 + 1;
-							ii = x, jj = y+1, kk = z;
-							offset = 1;
+							vert = interpVerticesY[getEdgeIdxY(x, y, z)];
 							break;
 						case 4: // i,j,k1 - i1,j,k1
-							//idxBVertices = ((x+1) * (bY + 1) * (bZ + 1) + y * (bZ + 1) + (z+1)) * 3;
-							ii = x+1, jj = y, kk = z+1;
-							offset = 0;
+							vert = interpVerticesX[getEdgeIdxX(x, y, z+1)];
 							break;
 						case 5: // i1,j,k1 - i1,j1,k1
-							//idxBVertices = ((x + 1) * (bY + 1) * (bZ + 1) + (y+1) * (bZ + 1) + (z + 1)) * 3 + 1;
-							ii = x+1, jj = y+1, kk = z+1;
-							offset = 1;
+							vert = interpVerticesY[getEdgeIdxY(x+1, y, z+1)];
 							break;
 						case 6: // i,j1,k1 - i1,j1,k1
-							//idxBVertices = ((x + 1) * (bY + 1) * (bZ + 1) + (y+1) * (bZ + 1) + (z+1)) * 3;
-							ii = x+1, jj = y+1, kk = z+1;
-							offset = 0;
+							vert = interpVerticesX[getEdgeIdxX(x, y + 1, z+1)];
 							break;
 						case 7: // i,j,k1 - i,j1,k1
-							//idxBVertices = (x * (bY + 1) * (bZ + 1) + (y + 1) * (bZ + 1) + (z + 1)) * 3 + 1;
-							ii = x, jj = y+1, kk = z+1;
-							offset = 1;
+							vert = interpVerticesY[getEdgeIdxY(x, y, z+1)];
 							break;
 						case 8: // i,j,k - i,j,k1
-							//idxBVertices = (x * (bY + 1) * (bZ + 1) + y * (bZ + 1) + (z+1)) * 3 + 2;
-							ii = x, jj = y, kk = z+1;
-							offset = 2;
+							vert = interpVerticesZ[getEdgeIdxZ(x, y, z)];
 							break;
 						case 9: // i1,j,k - i1,j,k1
-							//idxBVertices = ((x + 1) * (bY + 1) * (bZ + 1) + y * (bZ + 1) + (z+1)) * 3 + 2;
-							ii = x+1, jj = y, kk = z+1;
-							offset = 2;
+							vert = interpVerticesZ[getEdgeIdxZ(x+1, y, z)];
 							break;
 						case 10: // i1,j1,k - i1,j1,k1
-							//idxBVertices = ((x + 1) * (bY + 1) * (bZ + 1) + (y+1) * (bZ + 1) + (z + 1)) * 3 + 2;
-							ii = x+1, jj = y+1, kk = z+1;
-							offset = 2;
+							vert = interpVerticesZ[getEdgeIdxZ(x+1, y+1, z)];
 							break;
 						case 11: // i,j1,k - i,j1,k1
-							//idxBVertices = (x * (bY + 1) * (bZ + 1) + (y + 1) * (bZ + 1) + (z + 1)) * 3 + 2;
-							ii = x, jj = y+1, kk = z+1;
-							offset = 2;
+							vert = interpVerticesZ[getEdgeIdxZ(x, y+1, z)];
 							break;
 						}
-						Vector3f vert  = bVertList[(ii*(bY+1)*(bZ+1) + jj*(bZ+1) + kk)*3 + offset];
-						vertices[vertexCount++] = vert;
+						vertices.push_back(vert);
+						++vertexCount;
 					}
-					if (vertexCount >= maxVertexCount && !beenWarned)
-					{
-						std::cerr << "ofxMarhingCubes: maximum vertex(" + to_string(maxVertexCount) + ") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
-						beenWarned = true;
-						return;
-					}
+					//if (vertexCount >= maxVertexCount && !beenWarned)
+					//{
+					//	std::cerr << "ofxMarhingCubes: maximum vertex(" + to_string(maxVertexCount) + ") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
+					//	beenWarned = true;
+					//	return;
+					//}
 				}
 				++idx;
 			}
@@ -1249,16 +1264,14 @@ void MarchingCubes::vertexInterp_count_ops(float threshold, int i1, int j1, int 
 void MarchingCubes::computeNormal( int i, int j, int k ) {
 	
 
-	if(getGridPointComputed(i,j,k) == 0){
-		Vector3f& n = getNormalVal(i, j, k);// normalVals[i][j][k];
-		n.set(getIsoValue(min(resXm1, i+1), j, k) - getIsoValue(max(0,i-1),j,k),
-			  getIsoValue(i,min(resYm1, j+1),k) - getIsoValue(i,max(0,j-1),k),
-			  getIsoValue(i,j,min(resZm1, k+1)) - getIsoValue(i,j,max(0,k-1)));
-		
-		n.normalize();
-		n = n*flipNormalsValue;
-		getGridPointComputed(i,j,k) = 1;
-	}
+		//Vector3f& n = getNormalVal(i, j, k);// normalVals[i][j][k];
+		//n.set(getIsoValue(min(resXm1, i+1), j, k) - getIsoValue(max(0,i-1),j,k),
+		//	  getIsoValue(i,min(resYm1, j+1),k) - getIsoValue(i,max(0,j-1),k),
+		//	  getIsoValue(i,j,min(resZm1, k+1)) - getIsoValue(i,j,max(0,k-1)));
+		//
+		//n.normalize();
+		//n = n*flipNormalsValue;
+		//getGridPointComputed(i,j,k) = 1;
 };
 
 //void ofxMarchingCubes::drawArrays( vector<Vector3f>* _vertices, vector<Vector3f>* _normals){
@@ -1323,7 +1336,6 @@ void MarchingCubes::setGridPoints( float _x, float _y, float _z){
 void MarchingCubes::setIsoValue( int x, int y, int z, float value){
 	getIsoValue(min(resXm1,x), min(resYm1,y), min(resZm1,z)) = value;
 	isoValArray[min(resXm1, x) * resY * resZ + min(resYm1, y) * resZ + min(resZm1, z)] = value;
-	getGridPointComputed(x,y,z) = 0;
 	bUpdateMesh = true;
 }
 
@@ -1335,11 +1347,16 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	resXm1 = resX-1;
 	resYm1 = resY-1;
 	resZm1 = resZ-1;
+
+	sx = resXm1;
+	sy = resYm1;
+	sz = resZm1;
+	sx1 = resX;
+	sy1 = resY;
+	sz1 = resZ;
 	
 	isoVals.resize( resX*resY*resZ );
 	gridPoints.resize( resX*resY*resZ );
-	normalVals.resize( resX*resY*resZ );
-	gridPointComputed.resize( resX*resY*resZ );
 	
 	if (isoValArray != nullptr) delete[] isoValArray;
 	isoValArray = new float[resX * resY * resZ];
@@ -1357,7 +1374,6 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 
 void MarchingCubes::wipeIsoValues( float value){
 	
-	std::fill(gridPointComputed.begin(), gridPointComputed.end(), 0);
 	std::fill(isoVals.begin(), isoVals.end(), value);
 
 }
@@ -1366,7 +1382,6 @@ void MarchingCubes::wipeIsoValues( float value){
 void MarchingCubes::clear(){
 	isoVals.clear();
 	gridPoints.clear();
-	normalVals.clear();
 }
 
 void MarchingCubes::exportObj( string fileName ){
