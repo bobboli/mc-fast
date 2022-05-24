@@ -26,17 +26,14 @@ void SetSphere(MarchingCubes& mc)
 
 int main(int argc, char** argv)
 {
-    //if (argc != 6) { printf("usage: <res> <threshold> <blockX> <blockY> <blockZ>. \n"); return -1; }
-    //int res = atoi(argv[1]);
-    //float radius = atof(argv[2]);
-    //int blockX = atoi(argv[3]);
-    //int blockY = atoi(argv[4]);
-    //int blockZ = atoi(argv[5]);
-    //printf("resolution=%d\n", res);
+	if (argc != 6) { printf("usage: <res> <threshold> <blockX> <blockY> <blockZ>. \n"); return -1; }
+	int res = atoi(argv[1]);
+	float radius = atof(argv[2]);
+	int blockX = atoi(argv[3]);
+	int blockY = atoi(argv[4]);
+	int blockZ = atoi(argv[5]);
+	printf("resolution=%d\n", res);
 
-	float radius = 0.4;
-	int res = 250;
-	int blockX = 50, blockY =  50, blockZ = 50;
 
     // baseline result
     MarchingCubes mc;
