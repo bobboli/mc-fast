@@ -939,7 +939,7 @@ void MarchingCubes::polygonise_level(int level)
 		{
 			for (int z = 0; z < sz1; ++z)
 			{
-				thresCmpOld[iGrid] = isoVals[iGrid] > threshold;
+				thresCmpOld[iGrid] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
 				++iGrid;
 			}
 		}
@@ -952,7 +952,7 @@ void MarchingCubes::polygonise_level(int level)
 		{
 			for (int z = 0; z < sz1; ++z)
 			{
-				thresCmpNew[iGrid] = isoVals[iIsoVal] > threshold;
+				thresCmpNew[iGrid] = getIsoValue(x1, y, z) > threshold;// isoVals[iIsoVal] > threshold;
 				++iGrid;
 				++iIsoVal;
 			}
@@ -1538,6 +1538,12 @@ void MarchingCubes::setGridPoints( float _x, float _y, float _z){
 
 
 
+float MarchingCubes::getIsoValue(int x, int y, int z)
+{
+	//return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
+	return isoVals[x * resY * resZ + y * resZ + z];
+}
+
 float MarchingCubes::getIsoValueMorton(int x, int y, int z)
 {
 	return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
@@ -1581,7 +1587,7 @@ void MarchingCubes::encodeIsoValsMorton()
 			for (int z = 0; z < sz1; ++z)
 			{
 				int idx = libmorton::morton3D_32_encode(x, y, z);
-				isoValsMorton[idx] = getIsoValue(x, y, z);
+				isoValsMorton[idx] = isoVals[x * sy1 * sz1 + y * sz1 + z];//getIsoValue(x, y, z);
 			}
 		}
 	}
@@ -1626,6 +1632,8 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	vertInterpY = new Vector3f[sy*sz1*2];
 	vertInterpZ = new Vector3f[sy1*sz*2];
 	isoValsMorton = new float[sx1 * sy1 * sz1];
+
+	encodeIsoValsMorton();
 }
 
 //void MarchingCubes::wipeIsoValues( float value){

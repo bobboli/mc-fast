@@ -162,10 +162,8 @@ public:
 	//	transform.setTranslation( position );
 	// }
 
-	inline float getIsoValue(int x, int y, int z)
-	{
-		return isoVals[x * resY * resZ + y * resZ + z];
-	}
+	inline float getIsoValue(int x, int y, int z);
+
 
 	inline float getIsoValueMorton(int x, int y, int z);
 
