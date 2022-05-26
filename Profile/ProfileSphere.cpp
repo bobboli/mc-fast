@@ -24,24 +24,44 @@ void SetSphere(MarchingCubes& mc)
 	}
 }
 
+void SetRandom(MarchingCubes& mc, float _lo = -1.0, float _hi = 1.0)
+{
+	srand(1);
+	for (int i = 0; i < mc.resX; i++)
+	{
+		for (int j = 0; j < mc.resY; j++)
+		{
+			for (int k = 0; k < mc.resZ; k++)
+			{
+				float val = _lo + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (_hi - _lo)));
+				mc.setIsoValue(i, j, k, val);
+			}
+		}
+	}
+}
+
 int main(int argc, char** argv)
 {
-	if (argc != 6) { printf("usage: <res> <threshold> <blockX> <blockY> <blockZ>. \n"); return -1; }
-	int res = atoi(argv[1]);
-	float radius = atof(argv[2]);
-	int blockX = atoi(argv[3]);
-	int blockY = atoi(argv[4]);
-	int blockZ = atoi(argv[5]);
-	printf("resolution=%d\n", res);
+	//if (argc != 6) { printf("usage: <res> <threshold> <blockX> <blockY> <blockZ>. \n"); return -1; }
+	//int res = atoi(argv[1]);
+	//float radius = atof(argv[2]);
+	//int blockX = atoi(argv[3]);
+	//int blockY = atoi(argv[4]);
+	//int blockZ = atoi(argv[5]);
+	//printf("resolution=%d\n", res);
 
+	float radius = 0.4;
+	int resx = 100, resy = 100, resz= 100;
+	int blockX = 10, blockY = 10, blockZ = 10;
 
     // baseline result
     MarchingCubes mc;
-    mc.setup(res, res, res);
-    SetSphere(mc);
+    mc.setup(resx, resy, resz);
+    //SetSphere(mc);
+	SetRandom(mc);
     //const float radius = 0.4;
     mc.update(radius);
-    mc.exportObj("Sphere");
+    //mc.exportObj("Sphere");
     printf("%d\n", mc.vertexCount);
     
     // blocking result
@@ -54,19 +74,20 @@ int main(int argc, char** argv)
     
     // blocking (new) result
 	//MarchingCubes mc_b_new;
-	//mc_b_new.setup(res, res, res);
+	//mc_b_new.setup(resx, resy, resz);
 	//mc_b_new.setBlocking(blockX, blockY, blockZ);
-	//SetSphere(mc_b_new);
+	//SetRandom(mc_b_new);
 	//mc_b_new.update_block_new(radius);
 	//mc_b_new.exportObj("Sphere_block_new");
 
     // Level-by-level result
 	MarchingCubes mc_l;
-    mc_l.setup(res, res, res);
-	SetSphere(mc_l);
+    mc_l.setup(resx, resy, resz);
+	//SetSphere(mc_l);
+	SetRandom(mc_l);
     mc_l.update_level(radius);
     printf("%d\n", mc_l.vertexCount);
-    mc_l.exportObj("Sphere_level");
+	//mc_l.exportObj("Sphere_level");
 
 
     // vectorization result
