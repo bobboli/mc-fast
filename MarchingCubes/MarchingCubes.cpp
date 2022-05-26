@@ -1068,7 +1068,8 @@ void MarchingCubes::polygonise_level(int level)
 		for (int z = 0; z < sz; ++z)
 		{
 			int iCube = y * sz + z;
-			for (int ti = 0; triTable[cubeIndexLevel[iCube]][ti] != -1; ti += 3)
+			int cubeIndex = cubeIndexLevel[iCube];
+			for (int ti = 0; triTable[cubeIndex][ti] != -1; ti += 3)
 			{
 				for (int tj = 0; tj < 3; tj++)
 				{
@@ -1605,6 +1606,7 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	vertInterpX = new Vector3f[sy1 * sz1];
 	vertInterpY = new Vector3f[sy*sz1*2];
 	vertInterpZ = new Vector3f[sy1*sz*2];
+	isoValsMorton = new float[sx1 * sy1 * sz1];
 }
 
 void MarchingCubes::wipeIsoValues( float value){
