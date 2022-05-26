@@ -974,17 +974,18 @@ void MarchingCubes::polygonise_level(int level)
 			{
 				int z1 = z + 1;
 
-				int cubeIndex = 0;
+				int cubeIndexOld = 0;
+				int cubeIndexNew = 0;
 				// todo: accessing of isoVals could be further optimized without using getIsoValue
-				cubeIndex |= thresCmpOld[y * sz1 + z] ? 1 : 0;
-				cubeIndex |= thresCmpNew[y * sz1 + z] ? 2 : 0;
-				cubeIndex |= thresCmpNew[(y + 1) * sz1 + z] ? 4 : 0;
-				cubeIndex |= thresCmpOld[(y + 1) * sz1 + z] ? 8 : 0;
-				cubeIndex |= thresCmpOld[y * sz1 + (z + 1)] ? 16 : 0;
-				cubeIndex |= thresCmpNew[y * sz1 + (z + 1)] ? 32 : 0;
-				cubeIndex |= thresCmpNew[(y + 1) * sz1 + (z + 1)] ? 64 : 0;
-				cubeIndex |= thresCmpOld[(y + 1) * sz1 + (z + 1)] ? 128 : 0;
-				cubeIndexLevel[iCube++] = cubeIndex;
+				cubeIndexOld |= thresCmpOld[y * sz1 + z] ? 1 : 0;
+				cubeIndexNew |= thresCmpNew[y * sz1 + z] ? 2 : 0;
+				cubeIndexOld |= thresCmpNew[(y + 1) * sz1 + z] ? 4 : 0;
+				cubeIndexNew |= thresCmpOld[(y + 1) * sz1 + z] ? 8 : 0;
+				cubeIndexOld |= thresCmpOld[y * sz1 + (z + 1)] ? 16 : 0;
+				cubeIndexNew |= thresCmpNew[y * sz1 + (z + 1)] ? 32 : 0;
+				cubeIndexOld |= thresCmpNew[(y + 1) * sz1 + (z + 1)] ? 64 : 0;
+				cubeIndexNew |= thresCmpOld[(y + 1) * sz1 + (z + 1)] ? 128 : 0;
+				cubeIndexLevel[iCube++] = cubeIndexOld | cubeIndexNew;
 			}
 		}
 	}
