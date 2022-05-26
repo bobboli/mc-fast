@@ -124,7 +124,11 @@ public:
 	void polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
 	void computeNormal(int i, int j, int k);
-	void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
+	inline void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
+	inline void vertexInterp_X(float threshold, int x1, int x2, int y, int z, Vector3f &v, Vector3f &n);
+	inline void vertexInterp_Y(float threshold, int x, int y1, int y2, int z, Vector3f &v, Vector3f &n);
+	inline void vertexInterp_Z(float threshold, int x, int y, int z1, int z2, Vector3f &v, Vector3f &n);
+
 	void vertexInterp_vec(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
 	void vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts &counts);
 
@@ -189,6 +193,7 @@ public:
 
 	int sx, sy, sz;
 	int sx1, sy1, sz1;
+	float dx, dy, dz;
 	int bx, by, bz;
 	int bx1, by1, bz1;
 	int nbx, nby, nbz, nb;
