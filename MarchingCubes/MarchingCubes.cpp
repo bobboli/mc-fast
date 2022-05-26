@@ -37,7 +37,7 @@ void MarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 	//normals.resize( maxVertexCount );
 	
 	int numEdges = resXm1 * (resYm1 + 1) * (resZm1 + 1) + resYm1 * (resXm1 + 1) * (resZm1 + 1) + resZm1 * (resXm1 + 1) * (resYm1 + 1);
-	const int pctInterpEdge = 10;
+	const long long int pctInterpEdge = 20;  // Might be overflow here.
 	int numEdgesInterp = numEdges * pctInterpEdge / 100;
 
 	vertices.reserve(numEdgesInterp);
@@ -953,6 +953,10 @@ void MarchingCubes::polygonise_level(int level)
 			for (int z = 0; z < sz1; ++z)
 			{
 				thresCmpNew[iGrid] = getIsoValue(x1, y, z) > threshold;// isoVals[iIsoVal] > threshold;
+				//if (level == 0)  // It seems that you would rather iterate over y and z once more like above, than using a nested if here
+				//{
+				//	thresCmpOld[iGrid] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
+				//}
 				++iGrid;
 				++iIsoVal;
 			}
@@ -989,30 +993,30 @@ void MarchingCubes::polygonise_level(int level)
 	Vector3f dummyN;
 
 	// X edges
-	{
-		{
-			if (edgeTable[cubeIndexLevel[0]] & 1)	vertexInterp(threshold, x, 0, 0, x + 1, 0, 0, vertInterpX[0], dummyN);
-		}
+	//{
+	//	{
+	//		if (edgeTable[cubeIndexLevel[0]] & 1)	vertexInterp(threshold, x, 0, 0, x + 1, 0, 0, vertInterpX[0], dummyN);
+	//	}
 
-		for (int z = 0; z < sz; ++z)
-		{
-			if (edgeTable[cubeIndexLevel[z]] & 16)	vertexInterp(threshold, x, 0, z+1, x + 1, 0, z+1, vertInterpX[z+1], dummyN);
-		}
+	//	for (int z = 0; z < sz; ++z)
+	//	{
+	//		if (edgeTable[cubeIndexLevel[z]] & 16)	vertexInterp(threshold, x, 0, z+1, x + 1, 0, z+1, vertInterpX[z+1], dummyN);
+	//	}
 
-		for (int y = 0; y < sy; ++y)
-		{
-			if (edgeTable[cubeIndexLevel[y*sz]] & 4)	vertexInterp(threshold, x, y+1, 0, x + 1, y+1, 0, vertInterpX[(y+1)*sz1], dummyN);
-		}
+	//	for (int y = 0; y < sy; ++y)
+	//	{
+	//		if (edgeTable[cubeIndexLevel[y*sz]] & 4)	vertexInterp(threshold, x, y+1, 0, x + 1, y+1, 0, vertInterpX[(y+1)*sz1], dummyN);
+	//	}
 
 
-		for (int y = 0; y < sy; ++y)
-		{
-			for (int z = 0; z < sz; ++z)
-			{
-				if (edgeTable[cubeIndexLevel[y * sz + z]] & 64)	vertexInterp(threshold, x, y + 1, z + 1, x + 1, y + 1, z + 1, vertInterpX[(y + 1) * sz1 + (z + 1)], dummyN);
-			}
-		}
-	}
+	//	for (int y = 0; y < sy; ++y)
+	//	{
+	//		for (int z = 0; z < sz; ++z)
+	//		{
+	//			if (edgeTable[cubeIndexLevel[y * sz + z]] & 64)	vertexInterp(threshold, x, y + 1, z + 1, x + 1, y + 1, z + 1, vertInterpX[(y + 1) * sz1 + (z + 1)], dummyN);
+	//		}
+	//	}
+	//}
 
 	// Y and Z edges
 	if (level == 0)
@@ -1038,17 +1042,23 @@ void MarchingCubes::polygonise_level(int level)
 		}
 	}
 
-
+	// X, Y and Z edges
 	{
+		{
+			if (edgeTable[cubeIndexLevel[0]] & 1)	vertexInterp(threshold, x, 0, 0, x + 1, 0, 0, vertInterpX[0], dummyN);
+		}
+
 		for (int z = 0; z < sz; ++z)
 		{
-			if (edgeTable[cubeIndexLevel[z]] & 512)	vertexInterp(threshold, x+1, 0, z, x + 1, 0, z+1, vertInterpZNew[z], dummyN);
+			if (edgeTable[cubeIndexLevel[z]] & 16)	vertexInterp(threshold, x, 0, z+1, x + 1, 0, z+1, vertInterpX[z+1], dummyN);
+			if (edgeTable[cubeIndexLevel[z]] & 512)	vertexInterp(threshold, x + 1, 0, z, x + 1, 0, z + 1, vertInterpZNew[z], dummyN);
 		}
 
 
 		for (int y = 0; y < sy; ++y)
 		{
-			if (edgeTable[cubeIndexLevel[y*sz]] & 2)	vertexInterp(threshold, x+1, y, 0, x + 1, y+1, 0, vertInterpYNew[y*sz1], dummyN);
+			if (edgeTable[cubeIndexLevel[y*sz]] & 4)	vertexInterp(threshold, x, y+1, 0, x + 1, y+1, 0, vertInterpX[(y+1)*sz1], dummyN);
+			if (edgeTable[cubeIndexLevel[y * sz]] & 2)	vertexInterp(threshold, x + 1, y, 0, x + 1, y + 1, 0, vertInterpYNew[y * sz1], dummyN);
 		}
 
 		for (int y = 0; y < sy; ++y)
@@ -1056,12 +1066,14 @@ void MarchingCubes::polygonise_level(int level)
 			for (int z = 0; z < sz; ++z)
 			{
 				int edgeIndex = edgeTable[cubeIndexLevel[y * sz + z]];
-				if (edgeIndex & 32)  vertexInterp(threshold, x + 1, y, z + 1, x + 1, y + 1, z + 1, vertInterpYNew[y*sz1+(z+1)], dummyN);
-				if (edgeIndex & 1024)  vertexInterp(threshold, x + 1, y+1, z, x + 1, y + 1, z + 1, vertInterpZNew[(y+1)*sz+z], dummyN);
+				if (edgeIndex & 64)	vertexInterp(threshold, x, y + 1, z + 1, x + 1, y + 1, z + 1, vertInterpX[(y + 1) * sz1 + (z + 1)], dummyN);
+				if (edgeIndex & 32)  vertexInterp(threshold, x + 1, y, z + 1, x + 1, y + 1, z + 1, vertInterpYNew[y * sz1 + (z + 1)], dummyN);
+				if (edgeIndex & 1024)  vertexInterp(threshold, x + 1, y + 1, z, x + 1, y + 1, z + 1, vertInterpZNew[(y + 1) * sz + z], dummyN);
 			}
 
 		}
 	}
+
 
 	// Assembly triangles
 	for (int y = 0; y < sy; ++y)
@@ -1538,17 +1550,6 @@ void MarchingCubes::setGridPoints( float _x, float _y, float _z){
 
 
 
-float MarchingCubes::getIsoValue(int x, int y, int z)
-{
-	//return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
-	return isoVals[x * resY * resZ + y * resZ + z];
-}
-
-float MarchingCubes::getIsoValueMorton(int x, int y, int z)
-{
-	return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
-}
-
 //void ofxMarchingCubes::drawWireframe(){
 //	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 //	draw();
@@ -1631,9 +1632,9 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	vertInterpX = new Vector3f[sy1 * sz1];
 	vertInterpY = new Vector3f[sy*sz1*2];
 	vertInterpZ = new Vector3f[sy1*sz*2];
-	isoValsMorton = new float[sx1 * sy1 * sz1];
+	//isoValsMorton = new float[sx1 * sy1 * sz1];
 
-	encodeIsoValsMorton();
+	//encodeIsoValsMorton();
 }
 
 //void MarchingCubes::wipeIsoValues( float value){

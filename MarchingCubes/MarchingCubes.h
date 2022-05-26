@@ -162,10 +162,16 @@ public:
 	//	transform.setTranslation( position );
 	// }
 
-	inline float getIsoValue(int x, int y, int z);
+	inline float MarchingCubes::getIsoValue(int x, int y, int z)
+	{
+		//return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
+		return isoVals[x * resY * resZ + y * resZ + z];
+	}
 
-
-	inline float getIsoValueMorton(int x, int y, int z);
+	//inline float MarchingCubes::getIsoValueMorton(int x, int y, int z)
+	//{
+	//	return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
+	//}
 
 	inline Vector3f getGridPoint(int x, int y, int z)
 	{
