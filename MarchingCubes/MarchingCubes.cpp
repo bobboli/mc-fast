@@ -1,4 +1,5 @@
 #include "MarchingCubes.h"
+#include "libmorton/morton.h"
 
 MarchingCubes::MarchingCubes(){
 	threshold = .5;
@@ -7,7 +8,7 @@ MarchingCubes::MarchingCubes(){
 }
 
 MarchingCubes::~MarchingCubes() {
-	if (isoValArray != nullptr) delete[] isoValArray;
+	if (isoVals != nullptr) delete[] isoVals;
 	if (thresCmpArray != nullptr) delete[] thresCmpArray;
 	if (thresCmpIntArray != nullptr) delete[] thresCmpIntArray;
 	if (edgeInterpVal != nullptr) delete[] edgeInterpVal;
@@ -181,7 +182,7 @@ void MarchingCubes::update_vec(float _threshold) {
 	int num = resX * resY * resZ, n;
 	int dx = resY * resZ, dy = resZ;
 	for (n = 0; n < num - 7; n += 8) {
-		__m256 vals = _mm256_load_ps(isoValArray+n);
+		__m256 vals = _mm256_load_ps(isoVals+n);
 		__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
 		__m256 res = _mm256_and_ps(cmp, c1);
 		// don't have _mm256_store_epi32, only avaiable in avx512
@@ -189,7 +190,7 @@ void MarchingCubes::update_vec(float _threshold) {
 	}
 	for (; n < num; ++n)
 	{
-		thresCmpIntArray[n] = isoValArray[n] > threshold ? 1 : 0;
+		thresCmpIntArray[n] = isoVals[n] > threshold ? 1 : 0;
 	}
 	
 	// global intersection
@@ -206,11 +207,11 @@ void MarchingCubes::update_vec(float _threshold) {
 				__m256i b1 = _mm256_loadu_epi32(thresCmpIntArray+idx+dx);
 				__m256i cmp1 = _mm256_cmpeq_epi32(b1, b);
 				unsigned int mask1 = _mm256_movemask_epi8(cmp1);
-				__m256 val_start = _mm256_load_ps(isoValArray + idx);
+				__m256 val_start = _mm256_load_ps(isoVals + idx);
 				if (mask1 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_end = _mm256_loadu_ps(isoValArray+idx+dx);
+					__m256 val_end = _mm256_loadu_ps(isoVals+idx+dx);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
 					__m256 res = _mm256_div_ps(numerator, denominator);
@@ -224,7 +225,7 @@ void MarchingCubes::update_vec(float _threshold) {
 				if (mask2 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + dy);
+					__m256 val_end = _mm256_loadu_ps(isoVals + idx + dy);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
 					__m256 res = _mm256_div_ps(numerator, denominator);
@@ -238,7 +239,7 @@ void MarchingCubes::update_vec(float _threshold) {
 				if (mask3 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + 1);
+					__m256 val_end = _mm256_loadu_ps(isoVals + idx + 1);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
 					__m256 res = _mm256_div_ps(numerator, denominator);
@@ -248,10 +249,10 @@ void MarchingCubes::update_vec(float _threshold) {
 			for (; z < resZ - 1; ++z)
 			{
 				int idx = x * dx + y * dy + z;
-				float start = isoValArray[idx];
-				float end_x = isoValArray[idx+dx];
-				float end_y = isoValArray[idx+dy];
-				float end_z = isoValArray[idx+1];
+				float start = isoVals[idx];
+				float end_x = isoVals[idx+dx];
+				float end_y = isoVals[idx+dy];
+				float end_z = isoVals[idx+1];
 				float numerator = threshold - start;
 				edgeInterpVal[idx] = numerator / (end_x - start);
 				edgeInterpVal[idx+num] = numerator / (end_y - start);
@@ -286,11 +287,11 @@ void MarchingCubes::update_vec_16bit(float _threshold) {
 	int dx = resY * resZ, dy = resZ;
 	for (n = 0; n < num - 15; n += 16) {
 		// we can only compare 8 floats a time
-		__m256 vals1 = _mm256_load_ps(isoValArray + n);
+		__m256 vals1 = _mm256_load_ps(isoVals + n);
 		__m256 cmp1 = _mm256_cmp_ps(vals1, vt, _CMP_GT_OQ);
 		__m256i res1 = _mm256_cvtps_epi32(_mm256_and_ps(cmp1, c1));
 
-		__m256 vals2 = _mm256_load_ps(isoValArray + n + 8);
+		__m256 vals2 = _mm256_load_ps(isoVals + n + 8);
 		__m256 cmp2 = _mm256_cmp_ps(vals2, vt, _CMP_GT_OQ);
 		__m256i res2 = _mm256_cvtps_epi32(_mm256_and_ps(cmp2, c1));
 
@@ -301,7 +302,7 @@ void MarchingCubes::update_vec_16bit(float _threshold) {
 
 	for (; n < num; ++n)
 	{
-		thresCmpShortArray[n] = isoValArray[n] > threshold ? 1 : 0;
+		thresCmpShortArray[n] = isoVals[n] > threshold ? 1 : 0;
 	}
 
 	// global intersection
@@ -318,18 +319,18 @@ void MarchingCubes::update_vec_16bit(float _threshold) {
 				__m256i b1 = _mm256_loadu_epi16(thresCmpShortArray + idx + dx);
 				__m256i cmp1 = _mm256_cmpeq_epi16(b1, b);
 				unsigned int mask1 = _mm256_movemask_epi8(cmp1);
-				__m256 val_start = _mm256_loadu_ps(isoValArray + idx);
-				__m256 val_start2 = _mm256_loadu_ps(isoValArray + idx + 8);
+				__m256 val_start = _mm256_loadu_ps(isoVals + idx);
+				__m256 val_start2 = _mm256_loadu_ps(isoVals + idx + 8);
 				if (mask1 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + dx);
+					__m256 val_end = _mm256_loadu_ps(isoVals + idx + dx);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
 					__m256 res = _mm256_div_ps(numerator, denominator);
 					_mm256_storeu_ps(edgeInterpVal + idx, res);
 					
-					__m256 val_end2 = _mm256_loadu_ps(isoValArray + idx + dx + 8);
+					__m256 val_end2 = _mm256_loadu_ps(isoVals + idx + dx + 8);
 					__m256 denominator2 = _mm256_sub_ps(val_end2, val_start2);
 					__m256 numerator2 = _mm256_sub_ps(vt, val_start2);
 					__m256 res2 = _mm256_div_ps(numerator2, denominator2);
@@ -343,13 +344,13 @@ void MarchingCubes::update_vec_16bit(float _threshold) {
 				if (mask2 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + dy);
+					__m256 val_end = _mm256_loadu_ps(isoVals + idx + dy);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
 					__m256 res = _mm256_div_ps(numerator, denominator);
 					_mm256_storeu_ps(edgeInterpVal + num + idx, res);
 
-					__m256 val_end2 = _mm256_loadu_ps(isoValArray + idx + dy + 8);
+					__m256 val_end2 = _mm256_loadu_ps(isoVals + idx + dy + 8);
 					__m256 denominator2 = _mm256_sub_ps(val_end2, val_start2);
 					__m256 numerator2 = _mm256_sub_ps(vt, val_start2);
 					__m256 res2 = _mm256_div_ps(numerator2, denominator2);
@@ -363,13 +364,13 @@ void MarchingCubes::update_vec_16bit(float _threshold) {
 				if (mask3 != 0xffffffff)
 				{
 					// should gather the active edges into vector
-					__m256 val_end = _mm256_loadu_ps(isoValArray + idx + 1);
+					__m256 val_end = _mm256_loadu_ps(isoVals + idx + 1);
 					__m256 denominator = _mm256_sub_ps(val_end, val_start);
 					__m256 numerator = _mm256_sub_ps(vt, val_start);
 					__m256 res = _mm256_div_ps(numerator, denominator);
 					_mm256_storeu_ps(edgeInterpVal + num + num + idx, res);
 
-					__m256 val_end2 = _mm256_loadu_ps(isoValArray + idx + 1 + 8);
+					__m256 val_end2 = _mm256_loadu_ps(isoVals + idx + 1 + 8);
 					__m256 denominator2 = _mm256_sub_ps(val_end2, val_start2);
 					__m256 numerator2 = _mm256_sub_ps(vt, val_start2);
 					__m256 res2 = _mm256_div_ps(numerator2, denominator2);
@@ -379,10 +380,10 @@ void MarchingCubes::update_vec_16bit(float _threshold) {
 			for (; z < resZ - 1; ++z)
 			{
 				int idx = x * dx + y * dy + z;
-				float start = isoValArray[idx];
-				float end_x = isoValArray[idx + dx];
-				float end_y = isoValArray[idx + dy];
-				float end_z = isoValArray[idx + 1];
+				float start = isoVals[idx];
+				float end_x = isoVals[idx + dx];
+				float end_y = isoVals[idx + dy];
+				float end_z = isoVals[idx + 1];
 				float numerator = threshold - start;
 				edgeInterpVal[idx] = numerator / (end_x - start);
 				edgeInterpVal[idx + num] = numerator / (end_y - start);
@@ -1324,11 +1325,11 @@ void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& 
 
 inline void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n){
 	
-	Vector3f& p1 = getGridPoint(i1,j1,k1);
-	Vector3f& p2 = getGridPoint(i2,j2,k2);
+	Vector3f p1 = getGridPoint(i1,j1,k1);
+	Vector3f p2 = getGridPoint(i2,j2,k2);
 	
-	float& iso1 = getIsoValue(i1,j1,k1);
-	float& iso2 = getIsoValue(i2,j2,k2);
+	float iso1 = getIsoValue(i1,j1,k1);
+	float iso2 = getIsoValue(i2,j2,k2);
 	
 	//if(bSmoothed){
 	//	//we need to interpolate/calculate the normals
@@ -1397,10 +1398,10 @@ inline void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1,
 
 void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n) {
 
-	Vector3f& p1 = getGridPoint(i1, j1, k1);
-	Vector3f& p2 = getGridPoint(i2, j2, k2);
-	float& iso1 = getIsoValue(i1, j1, k1);
-	float& iso2 = getIsoValue(i2, j2, k2);
+	Vector3f p1 = getGridPoint(i1, j1, k1);
+	Vector3f p2 = getGridPoint(i2, j2, k2);
+	float iso1 = getIsoValue(i1, j1, k1);
+	float iso2 = getIsoValue(i2, j2, k2);
 
 	int idx1 = i1 * resZ * resY + j1 * resZ + k1;
 	int idx2 = i2 * resZ * resY + j2 * resZ + k2;
@@ -1455,11 +1456,11 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 
 void MarchingCubes::vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts& counts) {
 
-	Vector3f& p1 = getGridPoint(i1, j1, k1);
-	Vector3f& p2 = getGridPoint(i2, j2, k2);
+	Vector3f p1 = getGridPoint(i1, j1, k1);
+	Vector3f p2 = getGridPoint(i2, j2, k2);
 
-	float& iso1 = getIsoValue(i1, j1, k1);
-	float& iso2 = getIsoValue(i2, j2, k2);
+	float iso1 = getIsoValue(i1, j1, k1);
+	float iso2 = getIsoValue(i2, j2, k2);
 
 	// 1 float add, 1 fabs, 1 fcmp
 	counts.fl_cmp += 1;
@@ -1525,7 +1526,7 @@ void MarchingCubes::setGridPoints( float _x, float _y, float _z){
 	for(int i=0; i<resX; i++){
 		for(int j=0; j<resY; j++){
 			for(int k=0; k<resZ; k++){
-				getGridPoint( i, j, k ).set(float(i)*cellDim.x-.5f,
+				gridPoints[i * resY * resZ + j * resZ + k].set(float(i)*cellDim.x-.5f,
 											float(j)*cellDim.y-.5f,
 											float(k)*cellDim.z-.5f);
 			}
@@ -1536,6 +1537,11 @@ void MarchingCubes::setGridPoints( float _x, float _y, float _z){
 }
 
 
+
+float MarchingCubes::getIsoValueMorton(int x, int y, int z)
+{
+	return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
+}
 
 //void ofxMarchingCubes::drawWireframe(){
 //	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -1562,9 +1568,23 @@ void MarchingCubes::setGridPoints( float _x, float _y, float _z){
 //}
 
 void MarchingCubes::setIsoValue( int x, int y, int z, float value){
-	getIsoValue(min(resXm1,x), min(resYm1,y), min(resZm1,z)) = value;
-	isoValArray[min(resXm1, x) * resY * resZ + min(resYm1, y) * resZ + min(resZm1, z)] = value;
+	isoVals[min(sx, x) * resY * resZ + min(sy, y) * resZ + min(sz, z)] = value;
 	bUpdateMesh = true;
+}
+
+void MarchingCubes::encodeIsoValsMorton()
+{
+	for (int x = 0; x < sx1; ++x)
+	{
+		for (int y = 0; y < sy1; ++y)
+		{
+			for (int z = 0; z < sz1; ++z)
+			{
+				int idx = libmorton::morton3D_32_encode(x, y, z);
+				isoValsMorton[idx] = getIsoValue(x, y, z);
+			}
+		}
+	}
 }
 
 void MarchingCubes::setResolution( int _x, int _y, int _z ){
@@ -1583,11 +1603,10 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	sy1 = resY;
 	sz1 = resZ;
 	
-	isoVals.resize( resX*resY*resZ );
 	gridPoints.resize( resX*resY*resZ );
 	
-	if (isoValArray != nullptr) delete[] isoValArray;
-	isoValArray = new float[resX * resY * resZ];
+	if (isoVals != nullptr) delete[] isoVals;
+	isoVals = new float[resX * resY * resZ];
 	if (thresCmpArray != nullptr) delete[] thresCmpArray;
 	thresCmpArray = new float[resX * resY * resZ];
 	if (thresCmpIntArray != nullptr) delete[] thresCmpIntArray;
@@ -1609,15 +1628,14 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	isoValsMorton = new float[sx1 * sy1 * sz1];
 }
 
-void MarchingCubes::wipeIsoValues( float value){
-	
-	std::fill(isoVals.begin(), isoVals.end(), value);
-
-}
+//void MarchingCubes::wipeIsoValues( float value){
+//	
+//	std::fill(isoVals.begin(), isoVals.end(), value);
+//
+//}
 
 
 void MarchingCubes::clear(){
-	isoVals.clear();
 	gridPoints.clear();
 }
 

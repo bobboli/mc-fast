@@ -119,6 +119,7 @@ public:
 	void polygonise_block_new(int ibx, int iby, int ibz);
 	void polygonise_level(int level);
 
+
 	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
@@ -128,11 +129,8 @@ public:
 	void vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts &counts);
 
 	void setIsoValue(int x, int y, int z, float value);
-	void addToIsoValue(int x, int y, int z, float value)
-	{
-		getIsoValue(x, y, z) += value;
-		bUpdateMesh = true;
-	}
+
+	void encodeIsoValsMorton();
 
 	inline int getEdgeIdxX(int x, int y, int z)
 	{
@@ -152,7 +150,7 @@ public:
 	bool getSmoothing() { return bSmoothed; }
 	void setSmoothing(bool _bSmooth) { bSmoothed = _bSmooth; }
 
-	void wipeIsoValues(float value = 0.f);
+	//void wipeIsoValues(float value = 0.f);
 
 	void clear(); // deletes all the data. use whip
 
@@ -164,11 +162,14 @@ public:
 	//	transform.setTranslation( position );
 	// }
 
-	inline float &getIsoValue(int x, int y, int z)
+	inline float getIsoValue(int x, int y, int z)
 	{
 		return isoVals[x * resY * resZ + y * resZ + z];
 	}
-	inline Vector3f &getGridPoint(int x, int y, int z)
+
+	inline float getIsoValueMorton(int x, int y, int z);
+
+	inline Vector3f getGridPoint(int x, int y, int z)
 	{
 		return gridPoints[x * resY * resZ + y * resZ + z];
 	}
@@ -190,10 +191,10 @@ public:
 
 	float flipNormalsValue;
 	Vector3f cellDim;
-	vector<float> isoVals;
+	//vector<float> isoVals;
 	vector<Vector3f> gridPoints;
 
-	float* isoValArray = nullptr;
+	float* isoVals = nullptr;
 	float* thresCmpArray = nullptr;
 	int* thresCmpIntArray = nullptr;
 	short* thresCmpShortArray = nullptr;
@@ -240,4 +241,6 @@ public:
 	Vector3f* vertInterpX;
 	Vector3f* vertInterpY;
 	Vector3f* vertInterpZ;
+	float* isoValsMorton;
+
 };
