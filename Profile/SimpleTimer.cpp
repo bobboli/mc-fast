@@ -69,6 +69,7 @@ double queryperfcounter(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(fl
     num_runs = NUM_RUNS;
 #ifdef CALIBRATE
     while (num_runs < (1 << 14)) {
+        mc.reset();
         QueryPerformanceCounter(&start);
         for (i = 0; i < num_runs; ++i) {
             (mc.*ptr_update)(r);
@@ -83,7 +84,7 @@ double queryperfcounter(MarchingCubes& mc, void (MarchingCubes::* ptr_update)(fl
         num_runs *= 2;
     }
 #endif
-
+    mc.reset();
     QueryPerformanceCounter(&start);
     for (i = 0; i < num_runs; ++i) {
         (mc.*ptr_update)(r);

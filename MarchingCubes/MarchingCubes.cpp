@@ -36,12 +36,7 @@ void MarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 	//vertices.resize( maxVertexCount );
 	//normals.resize( maxVertexCount );
 	
-	int numEdges = resXm1 * (resYm1 + 1) * (resZm1 + 1) + resYm1 * (resXm1 + 1) * (resZm1 + 1) + resZm1 * (resXm1 + 1) * (resYm1 + 1);
-	const long long int pctInterpEdge = 20;  // Might be overflow here.
-	int numEdgesInterp = numEdges * pctInterpEdge / 100;
-
-	vertices.reserve(numEdgesInterp);
-	normals.reserve(numEdgesInterp);
+	reset();
 }
 
 void MarchingCubes::setBlocking(int blockX, int blockY, int blockZ) {
@@ -78,9 +73,20 @@ void MarchingCubes::setBlocking(int blockX, int blockY, int blockZ) {
 	//vertIndicesBoundaryZ = new int[bx*by*nb];
 }
 
+void MarchingCubes::reset()
+{
+	vertices.clear();
+	int numEdges = resXm1 * (resYm1 + 1) * (resZm1 + 1) + resYm1 * (resXm1 + 1) * (resZm1 + 1) + resZm1 * (resXm1 + 1) * (resYm1 + 1);
+	const long long int pctInterpEdge = 20;  // Might be overflow here.
+	int numEdgesInterp = numEdges * pctInterpEdge / 100;
+
+	vertices.reserve(numEdgesInterp);
+	//normals.reserve(numEdgesInterp);
+}
+
 void MarchingCubes::update(float _threshold){
 	// update every time
-	
+
 	//if( bUpdateMesh || threshold != _threshold ){
 			
 		threshold = _threshold;
@@ -169,6 +175,19 @@ void MarchingCubes::update_block_new(float _threshold)
 
 	}
 }
+
+void MarchingCubes::update_level(float _threshold)
+{
+	threshold = _threshold;
+
+	vertexCount = 0;
+
+	for (int x = 0; x < sx; ++x)
+	{
+		polygonise_level(x);
+	}
+}
+
 void MarchingCubes::update_vec(float _threshold) {
 	threshold = _threshold;
 
