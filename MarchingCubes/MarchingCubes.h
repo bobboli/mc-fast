@@ -105,6 +105,20 @@ public:
 	}
 	void update_level() { update_level(threshold); }
 
+	void MarchingCubes::update_level_vec(float _threshold)
+	{
+		threshold = _threshold;
+
+		vertexCount = 0;
+
+		for (int x = 0; x < sx; ++x)
+		{
+			polygonise_level_vec(x);
+		}
+
+	}
+	void update_level_vec() { update_level_vec(threshold); }
+
 	void count_ops(float _threshold, operation_counts &counts);
 
 	// void draw( GLenum renderType = GL_TRIANGLES );
@@ -118,6 +132,7 @@ public:
 	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_block_new(int ibx, int iby, int ibz);
 	void polygonise_level(int level);
+	void polygonise_level_vec(int level);
 
 
 	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
@@ -246,6 +261,7 @@ public:
 
 	// Level-by-level 
 	bool* thresCmpLevel;
+	int* thresCmpLevelInt;
 	int* cubeIndexLevel;
 	Vector3f* vertInterpX;
 	Vector3f* vertInterpY;

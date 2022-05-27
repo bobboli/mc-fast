@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 	SetRandom(mc);
     //const float radius = 0.4;
     mc.update(radius);
-    //mc.exportObj("Sphere");
+	//mc.exportObj("Sphere");
     printf("%d\n", mc.vertexCount);
     
     // blocking result
@@ -89,13 +89,24 @@ int main(int argc, char** argv)
     printf("%d\n", mc_l.vertexCount);
 	//mc_l.exportObj("Sphere_level");
 
+	// Level-by-level vectorization result
+	MarchingCubes mc_lv;
+	mc_lv.setup(resx, resy, resz);
+	//SetSphere(mc_lv);
+	SetRandom(mc_lv);
+	mc_lv.update_level_vec(radius);
+	printf("%d\n", mc_lv.vertexCount);
+	//mc_lv.exportObj("Sphere_level");
+
 
     // vectorization result
-    //MarchingCubes mc_v;
-    //mc_v.setup(res, res, res);
-    //mc_v.setBlocking(1, 1, 8);
+    MarchingCubes mc_v;
+    mc_v.setup(resx, resy, resz);
+    mc_v.setBlocking(1, 1, 8);
     //SetSphere(mc_v);
-    //mc_v.update_vec(radius);
+	SetRandom(mc_v);
+    mc_v.update_vec(radius);
+	printf("%d\n", mc_v.vertexCount);
     //mc_v.exportObj("Sphere_vec");
 
     // baseline timing
@@ -127,12 +138,20 @@ int main(int argc, char** argv)
 	printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_l / f_l.QuadPart, p_l / f_l.QuadPart * FREQUENCY);
 
 
+	// Level-by-level vectorization timing
+	void (MarchingCubes:: * ptr_update_level_vec)(float) = &MarchingCubes::update_level_vec;
+	LARGE_INTEGER f_lv;
+	QueryPerformanceFrequency((LARGE_INTEGER*)&f_lv);
+	double p_lv = queryperfcounter(mc_lv, ptr_update_level_vec, radius, f_lv);
+	printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_lv / f_lv.QuadPart, p_lv / f_lv.QuadPart * FREQUENCY);
+
+
     // vectorization timing
-    //void (MarchingCubes:: * ptr_update_vec)(float) = &MarchingCubes::update_vec;
-    //LARGE_INTEGER f_v;
-    //QueryPerformanceFrequency((LARGE_INTEGER*)&f_v);
-    //double p_v = queryperfcounter(mc_v, ptr_update_vec, radius, f_v);
-    //printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_v / f_v.QuadPart, p_v / f_v.QuadPart * FREQUENCY);
+    void (MarchingCubes:: * ptr_update_vec)(float) = &MarchingCubes::update_vec;
+    LARGE_INTEGER f_v;
+    QueryPerformanceFrequency((LARGE_INTEGER*)&f_v);
+    double p_v = queryperfcounter(mc_v, ptr_update_vec, radius, f_v);
+    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_v / f_v.QuadPart, p_v / f_v.QuadPart * FREQUENCY);
 
     // count baseline floating point operations
     operation_counts counts;
