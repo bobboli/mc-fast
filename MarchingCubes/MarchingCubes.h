@@ -81,6 +81,7 @@ public:
 
 	void setup(int resX = 30, int resY = 20, int resZ = 30, int _maxVertexCount = 200000);
 	void setBlocking(int blockX, int blockY, int blockZ);
+	void reset();
 	void update() { update(threshold); }
 	void update_block() { update_block(threshold); }
 	void update_vec() { update_vec(threshold); }
@@ -90,19 +91,7 @@ public:
 	void update_vec_16bit(float _threshold);
 	void update_block_new(float _threshold);
 	void update_block_new() { update_block_new(threshold); }
-
-	void MarchingCubes::update_level(float _threshold)
-	{
-		threshold = _threshold;
-
-		vertexCount = 0;
-
-		for (int x = 0; x < sx; ++x)
-		{
-			polygonise_level(x);
-		}
-
-	}
+	void update_level(float _threshold);
 	void update_level() { update_level(threshold); }
 
 	void MarchingCubes::update_level_vec(float _threshold)
