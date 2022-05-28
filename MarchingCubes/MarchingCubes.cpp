@@ -1020,31 +1020,6 @@ void MarchingCubes::polygonise_level(int level)
 	// Vertex interpolation
 	Vector3f dummyN;
 
-	// X edges
-	//{
-	//	{
-	//		if (edgeTable[cubeIndexLevel[0]] & 1)	vertexInterp(threshold, x, 0, 0, x + 1, 0, 0, vertInterpX[0], dummyN);
-	//	}
-
-	//	for (int z = 0; z < sz; ++z)
-	//	{
-	//		if (edgeTable[cubeIndexLevel[z]] & 16)	vertexInterp(threshold, x, 0, z+1, x + 1, 0, z+1, vertInterpX[z+1], dummyN);
-	//	}
-
-	//	for (int y = 0; y < sy; ++y)
-	//	{
-	//		if (edgeTable[cubeIndexLevel[y*sz]] & 4)	vertexInterp(threshold, x, y+1, 0, x + 1, y+1, 0, vertInterpX[(y+1)*sz1], dummyN);
-	//	}
-
-
-	//	for (int y = 0; y < sy; ++y)
-	//	{
-	//		for (int z = 0; z < sz; ++z)
-	//		{
-	//			if (edgeTable[cubeIndexLevel[y * sz + z]] & 64)	vertexInterp(threshold, x, y + 1, z + 1, x + 1, y + 1, z + 1, vertInterpX[(y + 1) * sz1 + (z + 1)], dummyN);
-	//		}
-	//	}
-	//}
 
 	// Y and Z edges
 	if (level == 0)
