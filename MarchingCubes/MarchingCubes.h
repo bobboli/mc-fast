@@ -216,6 +216,7 @@ public:
 
 	vector<Vector3f> vertices;
 	vector<Vector3f> normals;
+	vector<int> indices;
 	// ofVbo boundaryVbo;
 	// ofVbo gridPointsVbo;
 	int vertexCount, maxVertexCount;
@@ -255,6 +256,9 @@ public:
 	Vector3f* vertInterpX;
 	Vector3f* vertInterpY;
 	Vector3f* vertInterpZ;
+	int* vertIndexX;
+	int* vertIndexY;
+	int* vertIndexZ;
 	float* isoValsMorton;
 
 };

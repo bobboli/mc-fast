@@ -76,11 +76,13 @@ void MarchingCubes::setBlocking(int blockX, int blockY, int blockZ) {
 void MarchingCubes::reset()
 {
 	vertices.clear();
+	indices.clear();
 	int numEdges = resXm1 * (resYm1 + 1) * (resZm1 + 1) + resYm1 * (resXm1 + 1) * (resZm1 + 1) + resZm1 * (resXm1 + 1) * (resYm1 + 1);
-	const long long int pctInterpEdge = 20;  // Might be overflow here.
+	const long long int pctInterpEdge = 10;  // Might be overflow here.
 	int numEdgesInterp = numEdges * pctInterpEdge / 100;
 
 	vertices.reserve(numEdgesInterp);
+	indices.reserve(4 * numEdgesInterp);
 	//normals.reserve(numEdgesInterp);
 }
 
@@ -923,28 +925,41 @@ void MarchingCubes::polygonise_level(int level)
 	 */
 
 	bool* thresCmpOld, *thresCmpNew;
-	Vector3f* vertInterpYOld, *vertInterpYNew;
-	Vector3f* vertInterpZOld, *vertInterpZNew;
+	//Vector3f* vertInterpYOld, *vertInterpYNew;
+	//Vector3f* vertInterpZOld, *vertInterpZNew;
+
+	int* vertIndexYOld, * vertIndexYNew;
+	int* vertIndexZOld, * vertIndexZNew;
 
 	if (level % 2 == 0)
 	{
 		thresCmpOld = thresCmpLevel;
 		thresCmpNew = thresCmpLevel + sy1 * sz1;
 
-		vertInterpYOld = vertInterpY;
-		vertInterpYNew = vertInterpY + sy*sz1;
-		vertInterpZOld = vertInterpZ;
-		vertInterpZNew = vertInterpZ + sy1*sz;
+		//vertInterpYOld = vertInterpY;
+		//vertInterpYNew = vertInterpY + sy*sz1;
+		//vertInterpZOld = vertInterpZ;
+		//vertInterpZNew = vertInterpZ + sy1*sz;
+
+		vertIndexYOld = vertIndexY;
+		vertIndexYNew = vertIndexY + sy * sz1;
+		vertIndexZOld = vertIndexZ;
+		vertIndexZNew = vertIndexZ + sy1 * sz;
 	}
 	else
 	{
 		thresCmpNew = thresCmpLevel;
 		thresCmpOld = thresCmpLevel + sy1 * sz1;
 
-		vertInterpYNew = vertInterpY;
-		vertInterpYOld = vertInterpY + sy * sz1;
-		vertInterpZNew = vertInterpZ;
-		vertInterpZOld = vertInterpZ + sy1 * sz;
+		//vertInterpYNew = vertInterpY;
+		//vertInterpYOld = vertInterpY + sy * sz1;
+		//vertInterpZNew = vertInterpZ;
+		//vertInterpZOld = vertInterpZ + sy1 * sz;
+
+		vertIndexYNew = vertIndexY;
+		vertIndexYOld = vertIndexY + sy * sz1;
+		vertIndexZNew = vertIndexZ;
+		vertIndexZOld = vertIndexZ + sy1 * sz;
 	}
 
 	int x = level;
@@ -1019,6 +1034,7 @@ void MarchingCubes::polygonise_level(int level)
 
 	// Vertex interpolation
 	Vector3f dummyN;
+	Vector3f vert;  // todo: use multiple variables to increase ILP?
 
 
 	// Y and Z edges
@@ -1026,12 +1042,22 @@ void MarchingCubes::polygonise_level(int level)
 	{
 		for (int z = 0; z < sz; ++z)
 		{
-			if (edgeTable[cubeIndexLevel[z]] & 256)	vertexInterp_Z(threshold, 0, 0, z, z + 1, vertInterpZOld[z], dummyN);
+			if (edgeTable[cubeIndexLevel[z]] & 256)
+			{
+				vertIndexZOld[z] = vertices.size();
+				vertexInterp_Z(threshold, 0, 0, z, z + 1, vert, dummyN);
+				vertices.push_back(vert);
+			}
 		}
 
 		for (int y = 0; y < sy; ++y)
 		{
-			if (edgeTable[cubeIndexLevel[y * sz]] & 8)	vertexInterp_Y(threshold, 0, y, y + 1, 0, vertInterpYOld[y * sz1], dummyN);
+			if (edgeTable[cubeIndexLevel[y * sz]] & 8)
+			{
+				vertIndexYOld[y * sz1] = vertices.size();
+				vertexInterp_Y(threshold, 0, y, y + 1, 0, vert, dummyN);
+				vertices.push_back(vert);
+			}
 		}
 
 		for (int y = 0; y < sy; ++y)
@@ -1039,8 +1065,18 @@ void MarchingCubes::polygonise_level(int level)
 			for (int z = 0; z < sz; ++z)
 			{
 				int edgeIndex = edgeTable[cubeIndexLevel[y * sz + z]];
-				if (edgeIndex & 128)  vertexInterp_Y(threshold, 0, y, y + 1, z + 1, vertInterpYOld[y * sz1 + (z + 1)], dummyN);
-				if (edgeIndex & 2048)  vertexInterp_Z(threshold, 0, y + 1, z, z + 1, vertInterpZOld[(y + 1) * sz + z], dummyN);
+				if (edgeIndex & 128)
+				{
+					vertIndexYOld[y * sz1 + (z + 1)] = vertices.size();
+					vertexInterp_Y(threshold, 0, y, y + 1, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+				if (edgeIndex & 2048)
+				{
+					vertIndexZOld[(y + 1)* sz + z] = vertices.size();
+					vertexInterp_Z(threshold, 0, y + 1, z, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
 			}
 		}
 	}
@@ -1048,20 +1084,45 @@ void MarchingCubes::polygonise_level(int level)
 	// X, Y and Z edges
 	{
 		{
-			if (edgeTable[cubeIndexLevel[0]] & 1)	vertexInterp_X(threshold, x, x + 1, 0, 0, vertInterpX[0], dummyN);
+			if (edgeTable[cubeIndexLevel[0]] & 1)
+			{
+				vertIndexX[0] = vertices.size();
+				vertexInterp_X(threshold, x, x + 1, 0, 0, vert, dummyN);
+				vertices.push_back(vert);
+			}
 		}
 
 		for (int z = 0; z < sz; ++z)
 		{
-			if (edgeTable[cubeIndexLevel[z]] & 16)	vertexInterp_X(threshold, x, x + 1, 0, z+1, vertInterpX[z+1], dummyN);
-			if (edgeTable[cubeIndexLevel[z]] & 512)	vertexInterp_Z(threshold, x + 1, 0, z, z + 1, vertInterpZNew[z], dummyN);
+			if (edgeTable[cubeIndexLevel[z]] & 16)
+			{
+				vertIndexX[z + 1] = vertices.size();
+				vertexInterp_X(threshold, x, x + 1, 0, z + 1, vert, dummyN);
+				vertices.push_back(vert);	
+			}
+			if (edgeTable[cubeIndexLevel[z]] & 512)
+			{
+				vertIndexZNew[z] = vertices.size();
+				vertexInterp_Z(threshold, x + 1, 0, z, z + 1, vert, dummyN);
+				vertices.push_back(vert);
+			}
 		}
 
 
 		for (int y = 0; y < sy; ++y)
 		{
-			if (edgeTable[cubeIndexLevel[y*sz]] & 4)	vertexInterp_X(threshold, x, x + 1, y+1, 0, vertInterpX[(y+1)*sz1], dummyN);
-			if (edgeTable[cubeIndexLevel[y * sz]] & 2)	vertexInterp_Y(threshold, x + 1, y, y + 1, 0, vertInterpYNew[y * sz1], dummyN);
+			if (edgeTable[cubeIndexLevel[y * sz]] & 4)
+			{
+				vertIndexX[(y + 1) * sz1] = vertices.size();
+				vertexInterp_X(threshold, x, x + 1, y + 1, 0, vert, dummyN);
+				vertices.push_back(vert);
+			}
+			if (edgeTable[cubeIndexLevel[y * sz]] & 2)
+			{
+				vertIndexYNew[y * sz1] = vertices.size();
+				vertexInterp_Y(threshold, x + 1, y, y + 1, 0, vert, dummyN);
+				vertices.push_back(vert);
+			}
 		}
 
 		for (int y = 0; y < sy; ++y)
@@ -1069,11 +1130,25 @@ void MarchingCubes::polygonise_level(int level)
 			for (int z = 0; z < sz; ++z)
 			{
 				int edgeIndex = edgeTable[cubeIndexLevel[y * sz + z]];
-				if (edgeIndex & 64)	vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vertInterpX[(y + 1) * sz1 + (z + 1)], dummyN);
-				if (edgeIndex & 32)  vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vertInterpYNew[y * sz1 + (z + 1)], dummyN);
-				if (edgeIndex & 1024)  vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vertInterpZNew[(y + 1) * sz + z], dummyN);
+				if (edgeIndex & 64)
+				{
+					vertIndexX[(y + 1) * sz1 + (z + 1)] = vertices.size();
+					vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+				if (edgeIndex & 32)
+				{
+					vertIndexYNew[y * sz1 + (z + 1)] = vertices.size();
+					vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+				if (edgeIndex & 1024)
+				{
+					vertIndexZNew[(y + 1) * sz + z] = vertices.size();
+					vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
 			}
-
 		}
 	}
 
@@ -1089,47 +1164,47 @@ void MarchingCubes::polygonise_level(int level)
 			{
 				for (int tj = 0; tj < 3; tj++)
 				{
-					Vector3f vert;
+					int vertIndex;
 					switch (triTable[cubeIndexLevel[iCube]][ti + tj])
 					{
 					case 0: // i,j,k - i1,j,k
-						vert = vertInterpX[y * sz1 + z];
+						vertIndex = vertIndexX[y * sz1 + z];
 						break;
 					case 1: // i1,j,k - i1,j1,k
-						vert = vertInterpYNew[y * sz1 + z];
+						vertIndex = vertIndexYNew[y * sz1 + z];
 						break;
 					case 2: // i,j1,k - i1,j1,k
-						vert = vertInterpX[(y+1) * sz1 + z];
+						vertIndex = vertIndexX[(y+1) * sz1 + z];
 						break;
 					case 3: // i,j,k - i,j1,k
-						vert = vertInterpYOld[y * sz1 + z];
+						vertIndex = vertIndexYOld[y * sz1 + z];
 						break;
 					case 4: // i,j,k1 - i1,j,k1
-						vert = vertInterpX[y * sz1 + (z+1)];
+						vertIndex = vertIndexX[y * sz1 + (z+1)];
 						break;
 					case 5: // i1,j,k1 - i1,j1,k1
-						vert = vertInterpYNew[y * sz1 + (z+1)];
+						vertIndex = vertIndexYNew[y * sz1 + (z+1)];
 						break;
 					case 6: // i,j1,k1 - i1,j1,k1
-						vert = vertInterpX[(y+1) * sz1 + (z+1)];
+						vertIndex = vertIndexX[(y+1) * sz1 + (z+1)];
 						break;
 					case 7: // i,j,k1 - i,j1,k1
-						vert = vertInterpYOld[y * sz1 + (z+1)];
+						vertIndex = vertIndexYOld[y * sz1 + (z+1)];
 						break;
 					case 8: // i,j,k - i,j,k1
-						vert = vertInterpZOld[y * sz + z];
+						vertIndex = vertIndexZOld[y * sz + z];
 						break;
 					case 9: // i1,j,k - i1,j,k1
-						vert = vertInterpZNew[y * sz + z];
+						vertIndex = vertIndexZNew[y * sz + z];
 						break;
 					case 10: // i1,j1,k - i1,j1,k1
-						vert = vertInterpZNew[(y+1) * sz + z];
+						vertIndex = vertIndexZNew[(y+1) * sz + z];
 						break;
 					case 11: // i,j1,k - i,j1,k1
-						vert = vertInterpZOld[(y+1) * sz + z];
+						vertIndex = vertIndexZOld[(y+1) * sz + z];
 						break;
 					}
-					vertices.push_back(vert);
+					indices.push_back(vertIndex);
 					++vertexCount;
 				}
 			}
@@ -1978,6 +2053,10 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	vertInterpZ = new Vector3f[sy1*sz*2];
 	//isoValsMorton = new float[sx1 * sy1 * sz1];
 
+	vertIndexX = new int[sy1 * sz1];
+	vertIndexY = new int[sy * sz1 * 2];
+	vertIndexZ = new int[sy1 * sz * 2];
+
 	//encodeIsoValsMorton();
 }
 
@@ -2003,16 +2082,10 @@ void MarchingCubes::exportObj( string fileName ){
 	
 	ofstream outfile (fn);
 	
-	outfile << "# This file uses centimeters as units for non-parametric coordinates."<< endl;
 	
-	
-	//updateTransformMatrix();
-	//ofMatrix4x4 normMat;
-	//normMat.makeOrthoNormalOf( transform );
 	Vector3f v, n;
 	
-	for( int i=0; i<vertexCount; i++){
-		//v = transform * vertices[i];
+	for( int i=0; i<vertices.size(); ++i){
 		v = vertices[i];
 		outfile<< "v ";
 		outfile<< v.x << " ";
@@ -2032,18 +2105,40 @@ void MarchingCubes::exportObj( string fileName ){
 	//outfile << endl;
 	
 	//this only works for triangulated meshes
-	for( int i=0; i<vertexCount; i+=3){
-		outfile<< "f ";
-		for(int j=0; j<3; j++){
-			outfile<< i+j+1 ;
-			outfile<<"/"<<i+j+1 ;
-			outfile<< " ";
+	if (indices.empty())
+	{
+		for (int i = 0; i < vertexCount; i += 3)
+		{
+			outfile << "f ";
+			for (int j = 0; j < 3; j++)
+			{
+				outfile << i + j + 1;  // Vertex index starts from 1 in obj format.
+				//outfile << "/" << i + j + 1;  // This is the normal index.
+				outfile << " ";
+			}
+			outfile << "\n";
 		}
-		outfile<< endl;
 	}
+	else
+	{
+		int nFaces = indices.size() / 3;
+		for (int i = 0; i < nFaces; ++i)
+		{
+			outfile << "f ";
+			for (int j = 0; j < 3; j++)
+			{
+				outfile << indices[3*i + j] + 1;
+				//outfile << "/" << indices[i + j] + 1;
+				outfile << " ";
+			}
+			outfile << "\n";
+		}
+	}
+
 	outfile << endl;
 	
 	outfile.close();
 	
 	cout <<"model exported as: "<< title <<".obj"<< endl;
+
 }
