@@ -93,6 +93,8 @@ public:
 	void update_block_new() { update_block_new(threshold); }
 	void update_level(float _threshold);
 	void update_level() { update_level(threshold); }
+	void update_level_noswitch(float _threshold);
+	void update_level_noswitch() { update_level_noswitch(threshold); }
 
 	void MarchingCubes::update_level_vec(float _threshold)
 	{
@@ -121,6 +123,7 @@ public:
 	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_block_new(int ibx, int iby, int ibz);
 	void polygonise_level(int level);
+	void polygonise_level_noswitch(int level);
 	void polygonise_level_vec(int level);
 
 
@@ -261,4 +264,6 @@ public:
 	int* vertIndexZ;
 	float* isoValsMorton;
 
+	// No switch
+	int offsetLookUp[24] = {0};
 };

@@ -35,7 +35,19 @@ void MarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 	
 	//vertices.resize( maxVertexCount );
 	//normals.resize( maxVertexCount );
-	
+
+	int sz_xy = sy1 * sz1 + sy * sz1 * 2;
+	offsetLookUp[1] = (sy1 + sy) * sz1; 	offsetLookUp[13] = sy1 * sz1;
+	offsetLookUp[2] = sz1;					offsetLookUp[14] = sz1;
+	offsetLookUp[3] = sy1 * sz1; 			offsetLookUp[15] = (sy1 + sy) * sz1;
+	offsetLookUp[4] = 1; 					offsetLookUp[16] = 1;
+	offsetLookUp[5] = (sy1 + sy) * sz1 + 1;	offsetLookUp[17] = sy1 * sz1 + 1;
+	offsetLookUp[6] = sz1 + 1;				offsetLookUp[18] = sz1 + 1;
+	offsetLookUp[7] = sy1 * sz1 + 1;		offsetLookUp[19] = (sy1 + sy) * sz1 + 1;
+	offsetLookUp[8] = sz_xy;				offsetLookUp[20] = sz_xy + sy1 * sz;
+	offsetLookUp[9] = sz_xy + sy1 * sz;		offsetLookUp[21] = sz_xy;
+	offsetLookUp[10] = sz_xy + (sy1+1)*sz;  offsetLookUp[22] = sz_xy + sz;
+	offsetLookUp[11] = sz_xy + sz;			offsetLookUp[23] = sz_xy + (sy1+1)*sz;
 	reset();
 }
 
@@ -187,6 +199,18 @@ void MarchingCubes::update_level(float _threshold)
 	for (int x = 0; x < sx; ++x)
 	{
 		polygonise_level(x);
+	}
+}
+
+void MarchingCubes::update_level_noswitch(float _threshold)
+{
+	threshold = _threshold;
+
+	vertexCount = 0;
+
+	for (int x = 0; x < sx; ++x)
+	{
+		polygonise_level_noswitch(x);
 	}
 }
 
@@ -1152,7 +1176,6 @@ void MarchingCubes::polygonise_level(int level)
 		}
 	}
 
-
 	// Assembly triangles
 	for (int y = 0; y < sy; ++y)
 	{
@@ -1211,6 +1234,248 @@ void MarchingCubes::polygonise_level(int level)
 		}
 	}
 }
+
+void MarchingCubes::polygonise_level_noswitch(int level)
+{
+
+	bUpdateMesh = true;
+	/*
+	 Determine the index into the edge table which
+	 tells us which vertices are inside of the surface
+	 */
+
+	bool* thresCmpOld, *thresCmpNew;
+
+	int* vertIndexYOld, * vertIndexYNew;
+	int* vertIndexZOld, * vertIndexZNew;
+
+	if (level % 2 == 0)
+	{
+		thresCmpOld = thresCmpLevel;
+		thresCmpNew = thresCmpLevel + sy1 * sz1;
+
+		vertIndexYOld = vertIndexY;
+		vertIndexYNew = vertIndexY + sy * sz1;
+		vertIndexZOld = vertIndexZ;
+		vertIndexZNew = vertIndexZ + sy1 * sz;
+	}
+	else
+	{
+		thresCmpNew = thresCmpLevel;
+		thresCmpOld = thresCmpLevel + sy1 * sz1;
+
+		vertIndexYNew = vertIndexY;
+		vertIndexYOld = vertIndexY + sy * sz1;
+		vertIndexZNew = vertIndexZ;
+		vertIndexZOld = vertIndexZ + sy1 * sz;
+	}
+
+	int x = level;
+	int x1 = x + 1;
+
+	// Threshold computing
+	if (level == 0)
+	{
+		int iGrid = 0;
+		for (int y = 0; y < sy1; ++y)
+		{
+			for (int z = 0; z < sz1; ++z)
+			{
+				thresCmpOld[iGrid] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
+				++iGrid;
+			}
+		}
+	}
+
+	{
+		int iGrid = 0;
+		int iIsoVal = x1*sy1*sz1;
+		for (int y = 0; y < sy1; ++y)
+		{
+			for (int z = 0; z < sz1; ++z)
+			{
+				thresCmpNew[iGrid] = getIsoValue(x1, y, z) > threshold;// isoVals[iIsoVal] > threshold;
+				//if (level == 0)  // It seems that you would rather iterate over y and z once more like above, than using a nested if here
+				//{
+				//	thresCmpOld[iGrid] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
+				//}
+				++iGrid;
+				++iIsoVal;
+			}
+		}
+	}
+
+	// Cube index computation
+	{
+		int iCube = 0;
+		for (int y = 0; y < sy; ++y)
+		{
+			int y1 = y + 1;
+			for (int z = 0; z < sz; ++z)
+			{
+				int z1 = z + 1;
+
+				int cubeIndexOld = 0;
+				int cubeIndexNew = 0;
+				int base = y * sz1 + z;
+				// todo: accessing of isoVals could be further optimized without using getIsoValue
+				int thresCmpOld0 = thresCmpOld[base];
+				int thresCmpNew0 = thresCmpNew[base];
+				int thresCmpOld1 = thresCmpNew[base + sz1];
+				int thresCmpNew1 = thresCmpOld[base + sz1];
+				int thresCmpOld2 = thresCmpOld[base + 1];
+				int thresCmpNew2 = thresCmpNew[base + 1];
+				int thresCmpOld3 = thresCmpNew[base + sz1 + 1];
+				int thresCmpNew3 = thresCmpOld[base + sz1 + 1];
+				cubeIndexOld |= thresCmpOld0 | (thresCmpOld1 << 2) | (thresCmpOld2 << 4) | (thresCmpOld3 << 6);
+				cubeIndexNew |= (thresCmpNew0 << 1) | (thresCmpNew1 << 3) | (thresCmpNew2 << 5) | (thresCmpNew3 << 7);
+				cubeIndexLevel[iCube++] = cubeIndexOld | cubeIndexNew;
+			}
+		}
+	}
+
+	// Vertex interpolation
+	Vector3f dummyN;
+	Vector3f vert;  // todo: use multiple variables to increase ILP?
+
+
+	// Y and Z edges
+	if (level == 0)
+	{
+		for (int z = 0; z < sz; ++z)
+		{
+			if (edgeTable[cubeIndexLevel[z]] & 256)
+			{
+				vertIndexZOld[z] = vertices.size();
+				vertexInterp_Z(threshold, 0, 0, z, z + 1, vert, dummyN);
+				vertices.push_back(vert);
+			}
+		}
+
+		for (int y = 0; y < sy; ++y)
+		{
+			if (edgeTable[cubeIndexLevel[y * sz]] & 8)
+			{
+				vertIndexYOld[y * sz1] = vertices.size();
+				vertexInterp_Y(threshold, 0, y, y + 1, 0, vert, dummyN);
+				vertices.push_back(vert);
+			}
+		}
+
+		for (int y = 0; y < sy; ++y)
+		{
+			for (int z = 0; z < sz; ++z)
+			{
+				int edgeIndex = edgeTable[cubeIndexLevel[y * sz + z]];
+				if (edgeIndex & 128)
+				{
+					vertIndexYOld[y * sz1 + (z + 1)] = vertices.size();
+					vertexInterp_Y(threshold, 0, y, y + 1, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+				if (edgeIndex & 2048)
+				{
+					vertIndexZOld[(y + 1)* sz + z] = vertices.size();
+					vertexInterp_Z(threshold, 0, y + 1, z, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+			}
+		}
+	}
+
+	// X, Y and Z edges
+	{
+		{
+			if (edgeTable[cubeIndexLevel[0]] & 1)
+			{
+				vertIndexX[0] = vertices.size();
+				vertexInterp_X(threshold, x, x + 1, 0, 0, vert, dummyN);
+				vertices.push_back(vert);
+			}
+		}
+
+		for (int z = 0; z < sz; ++z)
+		{
+			if (edgeTable[cubeIndexLevel[z]] & 16)
+			{
+				vertIndexX[z + 1] = vertices.size();
+				vertexInterp_X(threshold, x, x + 1, 0, z + 1, vert, dummyN);
+				vertices.push_back(vert);	
+			}
+			if (edgeTable[cubeIndexLevel[z]] & 512)
+			{
+				vertIndexZNew[z] = vertices.size();
+				vertexInterp_Z(threshold, x + 1, 0, z, z + 1, vert, dummyN);
+				vertices.push_back(vert);
+			}
+		}
+
+
+		for (int y = 0; y < sy; ++y)
+		{
+			if (edgeTable[cubeIndexLevel[y * sz]] & 4)
+			{
+				vertIndexX[(y + 1) * sz1] = vertices.size();
+				vertexInterp_X(threshold, x, x + 1, y + 1, 0, vert, dummyN);
+				vertices.push_back(vert);
+			}
+			if (edgeTable[cubeIndexLevel[y * sz]] & 2)
+			{
+				vertIndexYNew[y * sz1] = vertices.size();
+				vertexInterp_Y(threshold, x + 1, y, y + 1, 0, vert, dummyN);
+				vertices.push_back(vert);
+			}
+		}
+
+		for (int y = 0; y < sy; ++y)
+		{
+			for (int z = 0; z < sz; ++z)
+			{
+				int edgeIndex = edgeTable[cubeIndexLevel[y * sz + z]];
+				if (edgeIndex & 64)
+				{
+					vertIndexX[(y + 1) * sz1 + (z + 1)] = vertices.size();
+					vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+				if (edgeIndex & 32)
+				{
+					vertIndexYNew[y * sz1 + (z + 1)] = vertices.size();
+					vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+				if (edgeIndex & 1024)
+				{
+					vertIndexZNew[(y + 1) * sz + z] = vertices.size();
+					vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+			}
+		}
+	}
+
+// Assembly triangles
+	for (int y = 0; y < sy; ++y)
+	{
+		for (int z = 0; z < sz; ++z)
+		{
+			int iCube = y * sz + z;
+			int base = iCube + y; // y * sz1 + z;
+			int *triTableEntry = triTable[cubeIndexLevel[iCube]];
+			for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
+			{
+				for (int tj = 0; tj < 3; tj++)
+				{
+					int val = triTable[cubeIndexLevel[iCube]][ti + tj];
+					int vertIndex = vertIndexX[base + offsetLookUp[val + (level & 1) * 12]];
+					indices.push_back(vertIndex);
+					++vertexCount;
+				}
+			}
+		}
+	}
+}
+
 
 void MarchingCubes::polygonise_level_vec(int level)
 {
@@ -2053,9 +2318,12 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	vertInterpZ = new Vector3f[sy1*sz*2];
 	//isoValsMorton = new float[sx1 * sy1 * sz1];
 
-	vertIndexX = new int[sy1 * sz1];
-	vertIndexY = new int[sy * sz1 * 2];
-	vertIndexZ = new int[sy1 * sz * 2];
+	// vertIndexX = new int[sy1 * sz1];
+	// vertIndexY = new int[sy * sz1 * 2];
+	// vertIndexZ = new int[sy1 * sz * 2];
+	vertIndexX = new int[sy1 * sz1 + sy * sz1 * 2 + sy1 * sz * 2];
+	vertIndexY = vertIndexX + (sy1 * sz1);
+	vertIndexZ = vertIndexY + (sy * sz1 * 2);
 
 	//encodeIsoValsMorton();
 }
