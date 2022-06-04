@@ -697,6 +697,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 
 		int numEdgeX = 0, numEdgeY = 0, numEdgeZ = 0;
 		int curNumVertices = vertices.size();
+		int oldNumVertices = curNumVertices;
 
 		// First pass: Generate vertex indices. Generate a list of edges to be interpolated (CSR-like format).
 		// Does not really interpolate vertices.
