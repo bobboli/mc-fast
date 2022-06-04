@@ -215,6 +215,6 @@ public:
 	int offsetLookUp[24] = {0};
 
 	// CSR style list of edges to interpolate
-	int* zIdxEdgeX, zIdxEdgeY, zIdxEdgeZ;
-	int* yStartEdgeX, yStartEdgeY, yStartEdgeZ;
+	int* zIndexEdgeX, *zIndexEdgeY, *zIndexEdgeZ;
+	int* yStartEdgeX, *yStartEdgeY, *yStartEdgeZ;
 };

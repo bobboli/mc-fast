@@ -695,48 +695,132 @@ void MarchingCubes::polygonise_level_vec(int level)
 			}
 		}
 
+		int numEdgeX = 0, numEdgeY = 0, numEdgeZ = 0;
+		int curNumVertices = vertices.size();
+
+		// First pass: Generate vertex indices. Generate a list of edges to be interpolated (CSR-like format).
+		// Does not really interpolate vertices.
 		for (int y = 0; y < sy; ++y)
 		{
-			for (int z = 0; z < sz; ++z)
+			yStart_EdgeX[y] = numEdgeX;
+			yStart_EdgeY[y] = numEdgeY;
+			yStart_EdgeZ[y] = numEdgeZ;
+
+			int zz;
+			int edgeIndex[8];
+
+			for (zz = 0; zz < sz - 7; zz += 8)
 			{
-				int iCube = y * sz + z;
-				int cubeIndex = cubeIndexLevel[iCube];
-				int edgeIndex = edgeTable[cubeIndex];
-				if (edgeIndex & 64)
+				int iCube = y * sz + zz;
+
+				// Lookup 8x edgeIndex.
+				for (int offset = 0; offset < 8; ++offset)
 				{
-					vertIndexX[(y + 1) * sz1 + (z + 1)] = vertices.size();
-					vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
-					vertices.push_back(vert);
-				}
-				if (edgeIndex & 32)
-				{
-					vertIndexYNew[y * sz1 + (z + 1)] = vertices.size();
-					vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
-					vertices.push_back(vert);
-				}
-				if (edgeIndex & 1024)
-				{
-					vertIndexZNew[(y + 1) * sz1 + z] = vertices.size();
-					vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
-					vertices.push_back(vert);
+					edgeIndex[offset] = edgeTable[cubeIndexLevel[iCube + offset]];
 				}
 
-				// Assembly triangles
-				int base = iCube + y; // y * sz1 + z;
-				int* triTableEntry = triTable[cubeIndex];
-				for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
+				for (int offset = 0; offset < 8; ++offset)
 				{
-					for (int tj = 0; tj < 3; tj++)
+					int z = zz + offset;
+					if (edgeIndex[offset] & 64)  // todo: Operation & could be done using SIMD
 					{
-						int val = triTable[cubeIndex][ti + tj];
-						int idx = base + offsetLookUp[val + (level & 1) * 12];
-						int vertIndex = vertIndexX[idx];
-						indices.push_back(vertIndex);
-						++vertexCount;
+						vertIndexX[(y + 1) * sz1 + (z + 1)] = curNumVertices;
+						zIndex_EdgeX[numEdgeX] = z;
+						++curNumVertices;
+						++numEdgeX;
+						//vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
+						//vertices.push_back(vert);
+					}
+				}
+
+				for (int offset = 0; offset < 8; ++offset)
+				{
+					int z = zz + offset;
+					if (edgeIndex[offset] & 32)
+					{
+						vertIndexYNew[y * sz1 + (z + 1)] = curNumVertices;
+						zIndex_EdgeY[numEdgeY] = z;
+						++curNumVertices;
+						++numEdgeY;
+						//vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
+						//vertices.push_back(vert);
+					}
+				}
+
+				for (int offset = 0; offset < 8; ++offset)
+				{
+					int z = zz + offset;
+					if (edgeIndex[offset] & 1024)
+					{
+						vertIndexZNew[(y + 1) * sz1 + z] = curNumVertices;
+						++curNumVertices;
+						++numEdgeZ;
+						//vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
+						//vertices.push_back(vert);
 					}
 				}
 			}
+
+			// Tails of z.
+			{
+				int iCube = y * sz + zz;
+				for (int offset = 0; zz + offset < sz; ++offset)
+				{
+					edgeIndex[offset] = edgeTable[cubeIndexLevel[iCube + offset]];
+				}
+
+				for (int offset = 0; zz + offset < sz; ++offset)
+				{
+					int z = zz + offset;
+					if (edgeIndex[offset] & 64)
+					{
+						vertIndexX[(y + 1) * sz1 + (z + 1)] = curNumVertices;
+						zIndex_EdgeX[numEdgeX] = z;
+						++curNumVertices;
+						++numEdgeX;
+						//vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
+						//vertices.push_back(vert);
+					}
+				}
+
+
+				for (int offset = 0; zz + offset < sz; ++offset)
+				{
+					int z = zz + offset;
+					if (edgeIndex[offset] & 32)
+					{
+						vertIndexYNew[y * sz1 + (z + 1)] = curNumVertices;
+						zIndex_EdgeY[numEdgeY] = z;
+						++curNumVertices;
+						++numEdgeY;
+						//vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
+						//vertices.push_back(vert);
+					}
+				}
+
+				for (int offset = 0; zz + offset < sz; ++offset)
+				{
+					int z = zz + offset;
+					if (edgeIndex[offset] & 1024)
+					{
+						vertIndexZNew[(y + 1) * sz1 + z] = curNumVertices;
+						++curNumVertices;
+						++numEdgeZ;
+						//vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
+						//vertices.push_back(vert);
+					}
+				}
+			}
+
 		}
+
+		// Second pass: Interpolate vertices and assemble triangles.
+		vertices.resize(curNumVertices);
+		for (int y = 0; y < sy; ++y)
+		{
+
+		}
+
 	}
 }
 
@@ -1165,6 +1249,14 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	thresCmpLevel = new bool[2 * sy1 * sz1];
 	thresCmpLevelInt = new int[2 * sy1 * sz1];
 	cubeIndexLevel = new int[sy * sz];
+
+	zIndex_EdgeX = new int[3 * sy1 * sz1];
+	zIndex_EdgeY = zIndex_EdgeX + sy1 * sz1;
+	zIndexEdgeZ = zIndex_EdgeY + sy1 * sz1;
+
+	yStart_EdgeX = new int[3 * sy1];
+	yStart_EdgeY = yStart_EdgeX + sy1;
+	yStart_EdgeZ = yStart_EdgeY + sy1;
 
 	//isoValsMorton = new float[sx1 * sy1 * sz1];
 
