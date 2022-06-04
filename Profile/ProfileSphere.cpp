@@ -57,31 +57,31 @@ int main(int argc, char** argv)
     // baseline result
     MarchingCubes mc;
     mc.setup(resx, resy, resz);
-    SetSphere(mc);
-	//SetRandom(mc);
+    //SetSphere(mc);
+	SetRandom(mc);
     //const float radius = 0.4;
     mc.update(radius);
-	mc.exportObj("Sphere");
+	//mc.exportObj("Sphere");
     printf("%d\n", mc.vertexCount);
     
     // Level-by-level result
 	MarchingCubes mc_l;
     mc_l.setup(resx, resy, resz);
-	SetSphere(mc_l);
-	//SetRandom(mc_l);
+	//SetSphere(mc_l);
+	SetRandom(mc_l);
     mc_l.update_level(radius);
     printf("%d\n", mc_l.vertexCount);
-	mc_l.exportObj("Sphere_level");
+	//mc_l.exportObj("Sphere_level");
 
 
 	// Level-by-level vectorization result
 	MarchingCubes mc_lv;
 	mc_lv.setup(resx, resy, resz);
-	SetSphere(mc_lv);
-	//SetRandom(mc_lv);
+	//SetSphere(mc_lv);
+	SetRandom(mc_lv);
 	mc_lv.update_level_vec(radius);
 	printf("%d\n", mc_lv.vertexCount);
-	mc_lv.exportObj("Sphere_level_vec");
+	//mc_lv.exportObj("Sphere_level_vec");
 
     // baseline timing
     void (MarchingCubes:: * ptr_update)(float) = &MarchingCubes::update;
