@@ -1446,7 +1446,9 @@ void MarchingCubes::polygonise_level_noswitch(int level)
 		{
 			for (int z = 0; z < sz; ++z)
 			{
-				int edgeIndex = edgeTable[cubeIndexLevel[y * sz + z]];
+				int iCube = y * sz + z;
+				int cubeIndex = cubeIndexLevel[iCube];
+				int edgeIndex = edgeTable[cubeIndex];
 				if (edgeIndex & 64)
 				{
 					vertIndexX[(y + 1) * sz1 + (z + 1)] = vertices.size();
@@ -1465,31 +1467,46 @@ void MarchingCubes::polygonise_level_noswitch(int level)
 					vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
 					vertices.push_back(vert);
 				}
-			}
-		}
-	}
 
-// Assembly triangles
-	for (int y = 0; y < sy; ++y)
-	{
-		for (int z = 0; z < sz; ++z)
-		{
-			int iCube = y * sz + z;
-			int base = iCube + y; // y * sz1 + z;
-			int *triTableEntry = triTable[cubeIndexLevel[iCube]];
-			for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
-			{
-				for (int tj = 0; tj < 3; tj++)
+				// Assembly triangles
+				int base = iCube + y; // y * sz1 + z;
+				int* triTableEntry = triTable[cubeIndex];
+				for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
 				{
-					int val = triTable[cubeIndexLevel[iCube]][ti + tj];
-					int idx = base + offsetLookUp[val + (level & 1) * 12];
-					int vertIndex = vertIndexX[idx];
-					indices.push_back(vertIndex);
-					++vertexCount;
+					for (int tj = 0; tj < 3; tj++)
+					{
+						int val = triTable[cubeIndex][ti + tj];
+						int idx = base + offsetLookUp[val + (level & 1) * 12];
+						int vertIndex = vertIndexX[idx];
+						indices.push_back(vertIndex);
+						++vertexCount;
+					}
 				}
 			}
 		}
 	}
+
+	// Assembly triangles
+	//for (int y = 0; y < sy; ++y)
+	//{
+	//	for (int z = 0; z < sz; ++z)
+	//	{
+	//		int iCube = y * sz + z;
+	//		int base = iCube + y; // y * sz1 + z;
+	//		int *triTableEntry = triTable[cubeIndexLevel[iCube]];
+	//		for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
+	//		{
+	//			for (int tj = 0; tj < 3; tj++)
+	//			{
+	//				int val = triTable[cubeIndexLevel[iCube]][ti + tj];
+	//				int idx = base + offsetLookUp[val + (level & 1) * 12];
+	//				int vertIndex = vertIndexX[idx];
+	//				indices.push_back(vertIndex);
+	//				++vertexCount;
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 
