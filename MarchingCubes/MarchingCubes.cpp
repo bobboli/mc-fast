@@ -1166,9 +1166,6 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	thresCmpLevelInt = new int[2 * sy1 * sz1];
 	cubeIndexLevel = new int[sy * sz];
 
-	vertInterpX = new Vector3f[sy1 * sz1];
-	vertInterpY = new Vector3f[sy*sz1*2];
-	vertInterpZ = new Vector3f[sy1*sz*2];
 	//isoValsMorton = new float[sx1 * sy1 * sz1];
 
 	//encodeIsoValsMorton();

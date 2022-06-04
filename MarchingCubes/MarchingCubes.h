@@ -204,14 +204,17 @@ public:
 	bool* thresCmpLevel;
 	int* thresCmpLevelInt;
 	int* cubeIndexLevel;
-	Vector3f* vertInterpX;
-	Vector3f* vertInterpY;
-	Vector3f* vertInterpZ;
+
 	int* vertIndexX;
 	int* vertIndexY;
 	int* vertIndexZ;
+
 	float* isoValsMorton;
 
 	// No switch
 	int offsetLookUp[24] = {0};
+
+	// CSR style list of edges to interpolate
+	int* zIdxEdgeX, zIdxEdgeY, zIdxEdgeZ;
+	int* yStartEdgeX, yStartEdgeY, yStartEdgeZ;
 };
