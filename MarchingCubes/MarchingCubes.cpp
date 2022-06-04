@@ -1252,7 +1252,7 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 
 	zIndex_EdgeX = new int[3 * sy1 * sz1];
 	zIndex_EdgeY = zIndex_EdgeX + sy1 * sz1;
-	zIndexEdgeZ = zIndex_EdgeY + sy1 * sz1;
+	zIndex_EdgeZ = zIndex_EdgeY + sy1 * sz1;
 
 	yStart_EdgeX = new int[3 * sy1];
 	yStart_EdgeY = yStart_EdgeX + sy1;
