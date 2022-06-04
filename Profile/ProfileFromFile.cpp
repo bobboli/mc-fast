@@ -79,15 +79,14 @@ void SetupFromVolFile(MarchingCubes& mc, char* filename)
 
 int main(int argc, char** argv)
 {
-    if (argc != 6) { printf("usage: <filepath> <threshold> <blockX> <blockY> <blockZ>. \n"); return -1; }
+    if (argc != 3) { printf("usage: <filepath> <threshold>. \n"); return -1; }
     char* filepath = argv[1];
     float threshold = atof(argv[2]);
-    int blockX = atoi(argv[3]);
-    int blockY = atoi(argv[4]);
-    int blockZ = atoi(argv[5]);
 
     // baseline result
     MarchingCubes mc;
+    MarchingCubes mc_l;
+    MarchingCubes mc_lv;
     int len = strlen(filepath);
     char ext[4];
     ext[0] = filepath[len - 3];
@@ -99,14 +98,23 @@ int main(int argc, char** argv)
     if(isVolFile)
     {
         SetupFromVolFile(mc, filepath);
+        SetupFromVolFile(mc_l, filepath);
+        SetupFromVolFile(mc_lv, filepath);
     }
     else
     {
         SetupFromFile(mc, filepath);
+        SetupFromFile(mc_l, filepath);
+        SetupFromFile(mc_lv, filepath);
     }
     mc.update(threshold);
     mc.exportObj("OutputMesh");
-    
+
+    mc_l.update_level(threshold);
+    mc_l.exportObj("OutputMesh_level"); 
+
+    mc_lv.update_level_vec(threshold);
+    mc_lv.exportObj("OutputMesh_level_vec");
 
     // baseline timing
     void (MarchingCubes:: * ptr_update)(float) = &MarchingCubes::update;
@@ -115,6 +123,19 @@ int main(int argc, char** argv)
     double p = queryperfcounter(mc, ptr_update, threshold, f);
     printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p / f.QuadPart, p / f.QuadPart * FREQUENCY);
     
+    // Level-by-level timing
+    void (MarchingCubes:: * ptr_update_level)(float) = &MarchingCubes::update_level;
+    LARGE_INTEGER f_l;
+    QueryPerformanceFrequency((LARGE_INTEGER*)&f_l);
+    double p_l = queryperfcounter(mc_l, ptr_update_level, threshold, f_l);
+    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_l / f_l.QuadPart, p_l / f_l.QuadPart * FREQUENCY);
+
+    // Level-by-level vectorization timing
+    void (MarchingCubes:: * ptr_update_level_vec)(float) = &MarchingCubes::update_level_vec;
+    LARGE_INTEGER f_lv;
+    QueryPerformanceFrequency((LARGE_INTEGER*)&f_lv);
+    double p_lv = queryperfcounter(mc_lv, ptr_update_level_vec, threshold, f_lv);
+    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_lv / f_lv.QuadPart, p_lv / f_lv.QuadPart * FREQUENCY);
 
 	return 0;
 }
