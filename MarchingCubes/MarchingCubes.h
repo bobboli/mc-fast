@@ -113,14 +113,11 @@ public:
 	void flipNormals() { flipNormalsValue *= -1; }
 	void setResolution(int _x = 10, int _y = 10, int _z = 10);
 	void polygonise(int i, int j, int k);
-	void polygonise_block(int i, int j, int k, int bX, int bY, int bZ);
-	void polygonise_block_new(int ibx, int iby, int ibz);
 	void polygonise_level(int level);
 	void polygonise_level_noswitch(int level);
 	void polygonise_level_vec(int level);
 
 
-	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
 	void computeNormal(int i, int j, int k);
 	inline void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
