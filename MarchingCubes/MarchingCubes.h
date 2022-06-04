@@ -217,4 +217,5 @@ public:
 	// CSR style list of edges to interpolate
 	int* zIndex_EdgeX, *zIndex_EdgeY, *zIndex_EdgeZ;
 	int* yStart_EdgeX, *yStart_EdgeY, *yStart_EdgeZ;
+	int* edgeIndexArray;
 };
