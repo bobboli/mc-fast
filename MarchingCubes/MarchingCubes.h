@@ -79,7 +79,7 @@ public:
 
 	void setMaxVertexCount(int _maxVertexCount = 100000);
 
-	void setup(int resX = 30, int resY = 20, int resZ = 30, int _maxVertexCount = 200000);
+	void setup(int resX = 30, int resY = 20, int resZ = 30, bool noswitch = false, int _maxVertexCount = 200000);
 	void setBlocking(int blockX, int blockY, int blockZ);
 	void reset();
 	void update() { update(threshold); }

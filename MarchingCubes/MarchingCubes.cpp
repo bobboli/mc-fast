@@ -23,7 +23,7 @@ void MarchingCubes::setMaxVertexCount( int _maxVertexCount ){
 }
 
 
-void MarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
+void MarchingCubes::setup( int resX, int resY, int resZ, bool noswitch, int _maxVertexCount){
 	
 	clear();
 
@@ -36,18 +36,32 @@ void MarchingCubes::setup( int resX, int resY, int resZ, int _maxVertexCount){
 	//vertices.resize( maxVertexCount );
 	//normals.resize( maxVertexCount );
 
-	int sz_xy = sy1 * sz1 + sy * sz1 * 2;
-	offsetLookUp[1] = (sy1 + sy) * sz1; 	offsetLookUp[13] = sy1 * sz1;
-	offsetLookUp[2] = sz1;					offsetLookUp[14] = sz1;
-	offsetLookUp[3] = sy1 * sz1; 			offsetLookUp[15] = (sy1 + sy) * sz1;
-	offsetLookUp[4] = 1; 					offsetLookUp[16] = 1;
-	offsetLookUp[5] = (sy1 + sy) * sz1 + 1;	offsetLookUp[17] = sy1 * sz1 + 1;
-	offsetLookUp[6] = sz1 + 1;				offsetLookUp[18] = sz1 + 1;
-	offsetLookUp[7] = sy1 * sz1 + 1;		offsetLookUp[19] = (sy1 + sy) * sz1 + 1;
-	offsetLookUp[8] = sz_xy;				offsetLookUp[20] = sz_xy + sy1 * sz;
-	offsetLookUp[9] = sz_xy + sy1 * sz;		offsetLookUp[21] = sz_xy;
-	offsetLookUp[10] = sz_xy + (sy1+1)*sz;  offsetLookUp[22] = sz_xy + sz;
-	offsetLookUp[11] = sz_xy + sz;			offsetLookUp[23] = sz_xy + (sy1+1)*sz;
+	if (!noswitch) {
+		// vertIndexX = new int[sy1 * sz1];
+		// vertIndexY = new int[sy * sz1 * 2];
+		// vertIndexZ = new int[sy1 * sz * 2];
+		vertIndexX = new int[sy1 * sz1 + sy * sz1 * 2 + sy1 * sz * 2];
+		vertIndexY = vertIndexX + (sy1 * sz1);
+		vertIndexZ = vertIndexY + (sy * sz1 * 2);
+	}
+	else {
+		// Trick: make them all same size so it's easy to calculate offsets
+		vertIndexX = new int[sy1 * sz1 * 5];
+		vertIndexY = vertIndexX + (sy1 * sz1);
+		vertIndexZ = vertIndexY + (sy1 * sz1 * 2);
+		int sz_xy = sy1 * sz1 * 3;
+		offsetLookUp[1] = sy1 * sz1 * 2; 		offsetLookUp[13] = sy1 * sz1;
+		offsetLookUp[2] = sz1;					offsetLookUp[14] = sz1;
+		offsetLookUp[3] = sy1 * sz1; 			offsetLookUp[15] = sy1 * sz1 * 2;
+		offsetLookUp[4] = 1; 					offsetLookUp[16] = 1;
+		offsetLookUp[5] = sy1 * sz1 * 2 + 1;	offsetLookUp[17] = sy1 * sz1 + 1;
+		offsetLookUp[6] = sz1 + 1;				offsetLookUp[18] = sz1 + 1;
+		offsetLookUp[7] = sy1 * sz1 + 1;		offsetLookUp[19] = sy1 * sz1 * 2 + 1;
+		offsetLookUp[8] = sz_xy;				offsetLookUp[20] = sz_xy + sy1 * sz1;
+		offsetLookUp[9] = sz_xy + sy1 * sz1;	offsetLookUp[21] = sz_xy;
+		offsetLookUp[10] = sz_xy + (sy1+1)*sz1; offsetLookUp[22] = sz_xy + sz1;
+		offsetLookUp[11] = sz_xy + sz1;			offsetLookUp[23] = sz_xy + (sy1+1)*sz1;
+	}
 	reset();
 }
 
@@ -1249,15 +1263,16 @@ void MarchingCubes::polygonise_level_noswitch(int level)
 	int* vertIndexYOld, * vertIndexYNew;
 	int* vertIndexZOld, * vertIndexZNew;
 
+	// Trick: make them all same size so it's easy to calculate offset
 	if (level % 2 == 0)
 	{
 		thresCmpOld = thresCmpLevel;
 		thresCmpNew = thresCmpLevel + sy1 * sz1;
 
 		vertIndexYOld = vertIndexY;
-		vertIndexYNew = vertIndexY + sy * sz1;
+		vertIndexYNew = vertIndexY + sy1 * sz1;
 		vertIndexZOld = vertIndexZ;
-		vertIndexZNew = vertIndexZ + sy1 * sz;
+		vertIndexZNew = vertIndexZ + sy1 * sz1;
 	}
 	else
 	{
@@ -1265,9 +1280,9 @@ void MarchingCubes::polygonise_level_noswitch(int level)
 		thresCmpOld = thresCmpLevel + sy1 * sz1;
 
 		vertIndexYNew = vertIndexY;
-		vertIndexYOld = vertIndexY + sy * sz1;
+		vertIndexYOld = vertIndexY + sy1 * sz1;
 		vertIndexZNew = vertIndexZ;
-		vertIndexZOld = vertIndexZ + sy1 * sz;
+		vertIndexZOld = vertIndexZ + sy1 * sz1;
 	}
 
 	int x = level;
@@ -1375,7 +1390,7 @@ void MarchingCubes::polygonise_level_noswitch(int level)
 				}
 				if (edgeIndex & 2048)
 				{
-					vertIndexZOld[(y + 1)* sz + z] = vertices.size();
+					vertIndexZOld[(y + 1) * sz1 + z] = vertices.size();
 					vertexInterp_Z(threshold, 0, y + 1, z, z + 1, vert, dummyN);
 					vertices.push_back(vert);
 				}
@@ -1446,7 +1461,7 @@ void MarchingCubes::polygonise_level_noswitch(int level)
 				}
 				if (edgeIndex & 1024)
 				{
-					vertIndexZNew[(y + 1) * sz + z] = vertices.size();
+					vertIndexZNew[(y + 1) * sz1 + z] = vertices.size();
 					vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
 					vertices.push_back(vert);
 				}
@@ -1467,7 +1482,8 @@ void MarchingCubes::polygonise_level_noswitch(int level)
 				for (int tj = 0; tj < 3; tj++)
 				{
 					int val = triTable[cubeIndexLevel[iCube]][ti + tj];
-					int vertIndex = vertIndexX[base + offsetLookUp[val + (level & 1) * 12]];
+					int idx = base + offsetLookUp[val + (level & 1) * 12];
+					int vertIndex = vertIndexX[idx];
 					indices.push_back(vertIndex);
 					++vertexCount;
 				}
@@ -2317,13 +2333,6 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	vertInterpY = new Vector3f[sy*sz1*2];
 	vertInterpZ = new Vector3f[sy1*sz*2];
 	//isoValsMorton = new float[sx1 * sy1 * sz1];
-
-	// vertIndexX = new int[sy1 * sz1];
-	// vertIndexY = new int[sy * sz1 * 2];
-	// vertIndexZ = new int[sy1 * sz * 2];
-	vertIndexX = new int[sy1 * sz1 + sy * sz1 * 2 + sy1 * sz * 2];
-	vertIndexY = vertIndexX + (sy1 * sz1);
-	vertIndexZ = vertIndexY + (sy * sz1 * 2);
 
 	//encodeIsoValsMorton();
 }

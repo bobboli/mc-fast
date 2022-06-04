@@ -91,12 +91,12 @@ int main(int argc, char** argv)
 
 	// Level-by-level no switch result
 	MarchingCubes mc_ln;
-	mc_ln.setup(resx, resy, resz);
-	//SetSphere(mc_l);
+	mc_ln.setup(resx, resy, resz, true);
+	//SetSphere(mc_ln);
 	SetRandom(mc_ln);
 	mc_ln.update_level_noswitch(radius);
 	printf("%d\n", mc_ln.vertexCount);
-	//mc_l.exportObj("Sphere_level_noswitch");
+	//mc_ln.exportObj("Sphere_level_noswitch");
 
 	// Level-by-level vectorization result
 	MarchingCubes mc_lv;
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 	mc_lv.update_level_vec(radius);
 	printf("%d\n", mc_lv.vertexCount);
 	//mc_lv.exportObj("Sphere_level");
-
+	// 
     // vectorization result
     MarchingCubes mc_v;
     mc_v.setup(resx, resy, resz);
