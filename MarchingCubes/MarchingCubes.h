@@ -80,17 +80,10 @@ public:
 	void setMaxVertexCount(int _maxVertexCount = 100000);
 
 	void setup(int resX = 30, int resY = 20, int resZ = 30, bool noswitch = false, int _maxVertexCount = 200000);
-	void setBlocking(int blockX, int blockY, int blockZ);
 	void reset();
 	void update() { update(threshold); }
-	void update_block() { update_block(threshold); }
-	void update_vec() { update_vec(threshold); }
 	void update(float _threshold);
-	void update_block(float _threshold);
 	void update_vec(float _threshold);
-	void update_vec_16bit(float _threshold);
-	void update_block_new(float _threshold);
-	void update_block_new() { update_block_new(threshold); }
 	void update_level(float _threshold);
 	void update_level() { update_level(threshold); }
 	void update_level_noswitch(float _threshold);
@@ -128,7 +121,6 @@ public:
 
 
 	void polygonise_vec(int i, int j, int k, int bX, int bY, int bZ);
-	void polygonise_vec_16bit(int i, int j, int k, int bX, int bY, int bZ);
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
 	void computeNormal(int i, int j, int k);
 	inline void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
@@ -143,20 +135,6 @@ public:
 
 	void encodeIsoValsMorton();
 
-	inline int getEdgeIdxX(int x, int y, int z)
-	{
-		return x * by1 * bz1 + y * bz1 + z;
-	}
-
-	inline int getEdgeIdxY(int x, int y, int z)
-	{
-		return x * by * bz1 + y * bz1 + z;
-	}
-
-	inline int getEdgeIdxZ(int x, int y, int z)
-	{
-		return x * by1 * bz + y * bz + z;
-	}
 
 	bool getSmoothing() { return bSmoothed; }
 	void setSmoothing(bool _bSmooth) { bSmoothed = _bSmooth; }
@@ -191,8 +169,6 @@ public:
 
 	void exportObj(string fileName);
 
-	// private:
-	// ofMatrix4x4 transform;
 	// Number of grid points in each axis:
 	int resX, resY, resZ;
 	// Number of cubes in each axis, which is 1 less than number of grid points:
@@ -201,9 +177,6 @@ public:
 	int sx, sy, sz;
 	int sx1, sy1, sz1;
 	float dx, dy, dz;
-	int bx, by, bz;
-	int bx1, by1, bz1;
-	int nbx, nby, nbz, nb;
 
 	float flipNormalsValue;
 	Vector3f cellDim;
@@ -230,26 +203,7 @@ public:
 	float threshold;
 	bool bSmoothed, beenWarned;
 
-	// transforms
-	// Vector3f position, scale, up;
-	// ofQuaternion orientation;
-	//
-	// ofMatrix3x3 normalMatrix;
-
-	// ofVbo vbo;
 	bool bUpdateMesh;
-
-	// Blocking intermediate results
-	int bX = 1, bY = 1, bZ = 1;  // Block size in number of cells.
-	bool *thresCmp = nullptr;
-	short *cubeIndices = nullptr;
-	int *cubeIndicesInt = nullptr;
-	Vector3f *bVertList = nullptr;
-
-	// Exclude left boundary and include right boundary.
-	Vector3f* interpVerticesX = nullptr;
-	Vector3f* interpVerticesY = nullptr;
-	Vector3f* interpVerticesZ = nullptr;
 
 
 	// Level-by-level 

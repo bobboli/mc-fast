@@ -64,22 +64,6 @@ int main(int argc, char** argv)
 	//mc.exportObj("Sphere");
     printf("%d\n", mc.vertexCount);
     
-    // blocking result
-    //MarchingCubes mc_b;
-    //mc_b.setup(res, res, res);
-    //mc_b.setBlocking(blockX, blockY, blockZ);
-    //SetSphere(mc_b);
-    //mc_b.update_block(radius);
-    //mc_b.exportObj("Sphere_block");
-    
-    // blocking (new) result
-	//MarchingCubes mc_b_new;
-	//mc_b_new.setup(resx, resy, resz);
-	//mc_b_new.setBlocking(blockX, blockY, blockZ);
-	//SetRandom(mc_b_new);
-	//mc_b_new.update_block_new(radius);
-	//mc_b_new.exportObj("Sphere_block_new");
-
     // Level-by-level result
 	MarchingCubes mc_l;
     mc_l.setup(resx, resy, resz);
@@ -106,16 +90,6 @@ int main(int argc, char** argv)
 	mc_lv.update_level_vec(radius);
 	printf("%d\n", mc_lv.vertexCount);
 	//mc_lv.exportObj("Sphere_level");
-	// 
-    // vectorization result
-    MarchingCubes mc_v;
-    mc_v.setup(resx, resy, resz);
-    mc_v.setBlocking(1, 1, 8);
-    //SetSphere(mc_v);
-	SetRandom(mc_v);
-    mc_v.update_vec(radius);
-	printf("%d\n", mc_v.vertexCount);
-    //mc_v.exportObj("Sphere_vec");
 
     // baseline timing
     void (MarchingCubes:: * ptr_update)(float) = &MarchingCubes::update;
@@ -123,20 +97,6 @@ int main(int argc, char** argv)
     QueryPerformanceFrequency((LARGE_INTEGER*)&f);
     double p = queryperfcounter(mc, ptr_update, radius, f);
     printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p / f.QuadPart, p / f.QuadPart * FREQUENCY);
-
-    // blocking timing
- /*   void (MarchingCubes:: * ptr_update_block)(float) = &MarchingCubes::update_block;
-	LARGE_INTEGER f_b;
-	QueryPerformanceFrequency((LARGE_INTEGER*)&f_b);
-	double p_b = queryperfcounter(mc_b, ptr_update_block, radius, f_b);
-	printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_b / f_b.QuadPart, p_b / f_b.QuadPart * FREQUENCY);*/
-
-	// blocking (new) timing
-	//void (MarchingCubes:: * ptr_update_block_new)(float) = &MarchingCubes::update_block_new;
-	//LARGE_INTEGER f_b_new;
-	//QueryPerformanceFrequency((LARGE_INTEGER*)&f_b_new);
-	//double p_b_new = queryperfcounter(mc_b_new, ptr_update_block_new, radius, f_b_new);
-	//printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_b_new / f_b_new.QuadPart, p_b_new / f_b_new.QuadPart * FREQUENCY);
 
     // Level-by-level timing
 	void (MarchingCubes:: * ptr_update_level)(float) = &MarchingCubes::update_level;
@@ -159,13 +119,6 @@ int main(int argc, char** argv)
 	double p_lv = queryperfcounter(mc_lv, ptr_update_level_vec, radius, f_lv);
 	printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_lv / f_lv.QuadPart, p_lv / f_lv.QuadPart * FREQUENCY);
 
-
-    // vectorization timing
-    void (MarchingCubes:: * ptr_update_vec)(float) = &MarchingCubes::update_vec;
-    LARGE_INTEGER f_v;
-    QueryPerformanceFrequency((LARGE_INTEGER*)&f_v);
-    double p_v = queryperfcounter(mc_v, ptr_update_vec, radius, f_v);
-    printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_v / f_v.QuadPart, p_v / f_v.QuadPart * FREQUENCY);
 
     // count baseline floating point operations
     operation_counts counts;
