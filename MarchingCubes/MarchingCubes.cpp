@@ -747,6 +747,28 @@ void MarchingCubes::polygonise_level_vec(int level)
 					//vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
 					//vertices.push_back(vert);
 				}
+
+				// Vertex indices could already be assembled at this time:
+				// (Though a little bit strange to put it here).
+				{
+					int iCube = y * sz + z;
+					int base = iCube + y;
+					int cubeIndex = cubeIndexLevel[iCube];
+					int* triTableEntry = triTable[cubeIndex];
+					for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
+					{
+						for (int tj = 0; tj < 3; tj++)
+						{
+							int val = triTable[cubeIndex][ti + tj];
+							int idx = base + offsetLookUp[val + (level & 1) * 12];
+							int vertIndex = vertIndexX[idx];
+							indices.push_back(vertIndex);
+							++vertexCount;
+						}
+					}
+				}
+
+
 			}
 		}
 		yStart_EdgeX[sy] = numEdgeX;
@@ -763,25 +785,27 @@ void MarchingCubes::polygonise_level_vec(int level)
 			for (int i = yStart_EdgeX[y]; i < yStart_EdgeX[y + 1]; ++i)
 			{
 				int z = zIndex_EdgeX[i];  // All z's that should be interpolated
-				// ...
+				vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
+				vertices[oldNumVertices++] = vert;
 			}
 
 			// Interpolate vertices on Edge Y. 
 			for (int i = yStart_EdgeY[y]; i < yStart_EdgeY[y + 1]; ++i)
 			{
 				int z = zIndex_EdgeY[i];  // All z's that should be interpolated
-				// ...
+				vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
+				vertices[oldNumVertices++] = vert;
 			}
 
 			// Interpolate vertices on Edge X. 
 			for (int i = yStart_EdgeZ[y]; i < yStart_EdgeZ[y + 1]; ++i)
 			{
 				int z = zIndex_EdgeZ[i];  // All z's that should be interpolated
-				// ...
+				vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
+				vertices[oldNumVertices++] = vert;
 			}
 			
 		}
-
 	}
 }
 
