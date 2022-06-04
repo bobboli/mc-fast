@@ -73,14 +73,6 @@ int main(int argc, char** argv)
     printf("%d\n", mc_l.vertexCount);
 	//mc_l.exportObj("Sphere_level");
 
-	// Level-by-level no switch result
-	MarchingCubes mc_ln;
-	mc_ln.setup(resx, resy, resz, true);
-	//SetSphere(mc_ln);
-	SetRandom(mc_ln);
-	mc_ln.update_level_noswitch(radius);
-	printf("%d\n", mc_ln.vertexCount);
-	//mc_ln.exportObj("Sphere_level_noswitch");
 
 	// Level-by-level vectorization result
 	MarchingCubes mc_lv;
@@ -104,13 +96,6 @@ int main(int argc, char** argv)
 	QueryPerformanceFrequency((LARGE_INTEGER*)&f_l);
 	double p_l = queryperfcounter(mc_l, ptr_update_level, radius, f_l);
 	printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_l / f_l.QuadPart, p_l / f_l.QuadPart * FREQUENCY);
-
-	// Level-by-level no switch timing
-	void (MarchingCubes::* ptr_update_level_noswitch)(float) = &MarchingCubes::update_level_noswitch;
-	LARGE_INTEGER f_ln;
-	QueryPerformanceFrequency((LARGE_INTEGER*)&f_ln);
-	double p_ln = queryperfcounter(mc_ln, ptr_update_level_noswitch, radius, f_ln);
-	printf("Windows QueryPerformanceCounter() timing: %lf seconds. ==> %lf cycles based on FRENQUENCY.\n\n", p_ln / f_ln.QuadPart, p_ln / f_ln.QuadPart * FREQUENCY);
 
 	// Level-by-level vectorization timing
 	void (MarchingCubes:: * ptr_update_level_vec)(float) = &MarchingCubes::update_level_vec;

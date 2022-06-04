@@ -79,15 +79,13 @@ public:
 
 	void setMaxVertexCount(int _maxVertexCount = 100000);
 
-	void setup(int resX = 30, int resY = 20, int resZ = 30, bool noswitch = false, int _maxVertexCount = 200000);
+	void setup(int resX = 30, int resY = 20, int resZ = 30, int _maxVertexCount = 200000);
 	void reset();
 	void update() { update(threshold); }
 	void update(float _threshold);
 	void update_vec(float _threshold);
 	void update_level(float _threshold);
 	void update_level() { update_level(threshold); }
-	void update_level_noswitch(float _threshold);
-	void update_level_noswitch() { update_level_noswitch(threshold); }
 
 	void MarchingCubes::update_level_vec(float _threshold)
 	{
@@ -114,7 +112,6 @@ public:
 	void setResolution(int _x = 10, int _y = 10, int _z = 10);
 	void polygonise(int i, int j, int k);
 	void polygonise_level(int level);
-	void polygonise_level_noswitch(int level);
 	void polygonise_level_vec(int level);
 
 
