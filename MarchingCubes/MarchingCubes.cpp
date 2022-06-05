@@ -415,16 +415,13 @@ void MarchingCubes::polygonise_level(int level)
 				// Assembly triangles
 				int base = iCube + y; // y * sz1 + z;
 				int* triTableEntry = triTable[cubeIndex];
-				for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
+				for (int i = 0; triTableEntry[i] != -1; ++i)
 				{
-					for (int tj = 0; tj < 3; tj++)
-					{
-						int val = triTable[cubeIndex][ti + tj];
-						int idx = base + offsetLookUp[val + (level & 1) * 12];
-						int vertIndex = vertIndexX[idx];
-						indices.push_back(vertIndex);
-						++vertexCount;
-					}
+					int val = triTableEntry[i];
+					int idx = base + offsetLookUp[val + (level & 1) * 12];
+					int vertIndex = vertIndexX[idx];
+					indices.push_back(vertIndex);
+					++vertexCount;
 				}
 			}
 		}
@@ -756,16 +753,13 @@ void MarchingCubes::polygonise_level_vec(int level)
 					int base = iCube + y;
 					int cubeIndex = cubeIndexLevel[iCube];
 					int* triTableEntry = triTable[cubeIndex];
-					for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
+					for (int i = 0; triTableEntry[i] != -1; ++i)
 					{
-						for (int tj = 0; tj < 3; tj++)
-						{
-							int val = triTable[cubeIndex][ti + tj];
-							int idx = base + offsetLookUp[val + (level & 1) * 12];
-							int vertIndex = vertIndexX[idx];
-							indices.push_back(vertIndex);
-							++vertexCount;
-						}
+						int val = triTableEntry[i];
+						int idx = base + offsetLookUp[val + (level & 1) * 12];
+						int vertIndex = vertIndexX[idx];
+						indices.push_back(vertIndex);
+						++vertexCount;
 					}
 				}
 
