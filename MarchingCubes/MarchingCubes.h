@@ -127,7 +127,7 @@ public:
 
 	void setIsoValue(int x, int y, int z, float value);
 
-	void encodeIsoValsMorton();
+	//void encodeIsoValsMorton();
 
 
 	bool getSmoothing() { return bSmoothed; }
@@ -164,15 +164,11 @@ public:
 	float* isoVals = nullptr;
 	float* thresCmpArray = nullptr;
 	int* thresCmpIntArray = nullptr;
-	short* thresCmpShortArray = nullptr;
 	float* edgeInterpVal = nullptr;
-	Vector3f* verticesOffset = nullptr;
 
 	vector<Vector3f> vertices;
 	vector<Vector3f> normals;
 	vector<int> indices;
-	// ofVbo boundaryVbo;
-	// ofVbo gridPointsVbo;
 	int vertexCount, maxVertexCount;
 
 
@@ -185,21 +181,21 @@ public:
 
 
 	// Level-by-level 
-	bool* thresCmpLevel;
-	int* thresCmpLevelInt;
-	int* cubeIndexLevel;
+	bool* thresCmpLevel = nullptr;
+	int* thresCmpLevelInt = nullptr;
+	int* cubeIndexLevel = nullptr;
 
-	int* vertIndexX;
-	int* vertIndexY;
-	int* vertIndexZ;
+	int* vertIndexX = nullptr;
+	int* vertIndexY = nullptr;
+	int* vertIndexZ = nullptr;
 
-	float* isoValsMorton;
+	//float* isoValsMorton;
 
 	// No switch
 	int offsetLookUp[24] = {0};
 
 	// CSR style list of edges to interpolate
-	int* zIndex_EdgeX, *zIndex_EdgeY, *zIndex_EdgeZ;
-	int* yStart_EdgeX, *yStart_EdgeY, *yStart_EdgeZ;
-	int* edgeIndexArray;
+	int* zIndex_EdgeX = nullptr, * zIndex_EdgeY = nullptr, * zIndex_EdgeZ = nullptr;
+	int* yStart_EdgeX = nullptr, * yStart_EdgeY = nullptr, * yStart_EdgeZ = nullptr;
+	int* edgeIndexArray = nullptr;
 };

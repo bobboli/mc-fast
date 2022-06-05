@@ -8,10 +8,7 @@ MarchingCubes::MarchingCubes(){
 }
 
 MarchingCubes::~MarchingCubes() {
-	if (isoVals != nullptr) delete[] isoVals;
-	if (thresCmpArray != nullptr) delete[] thresCmpArray;
-	if (thresCmpIntArray != nullptr) delete[] thresCmpIntArray;
-	if (edgeInterpVal != nullptr) delete[] edgeInterpVal;
+	clear();
 }
 
 void MarchingCubes::setMaxVertexCount( int _maxVertexCount ){
@@ -1297,20 +1294,20 @@ void MarchingCubes::setIsoValue( int x, int y, int z, float value){
 	bUpdateMesh = true;
 }
 
-void MarchingCubes::encodeIsoValsMorton()
-{
-	for (int x = 0; x < sx1; ++x)
-	{
-		for (int y = 0; y < sy1; ++y)
-		{
-			for (int z = 0; z < sz1; ++z)
-			{
-				int idx = libmorton::morton3D_32_encode(x, y, z);
-				isoValsMorton[idx] = isoVals[x * sy1 * sz1 + y * sz1 + z];//getIsoValue(x, y, z);
-			}
-		}
-	}
-}
+//void MarchingCubes::encodeIsoValsMorton()
+//{
+//	for (int x = 0; x < sx1; ++x)
+//	{
+//		for (int y = 0; y < sy1; ++y)
+//		{
+//			for (int z = 0; z < sz1; ++z)
+//			{
+//				int idx = libmorton::morton3D_32_encode(x, y, z);
+//				isoValsMorton[idx] = isoVals[x * sy1 * sz1 + y * sz1 + z];//getIsoValue(x, y, z);
+//			}
+//		}
+//	}
+//}
 
 void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	
@@ -1331,15 +1328,9 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	dy = 1.0 / sy;
 	dz = 1.0 / sz;
 	
-	if (isoVals != nullptr) delete[] isoVals;
 	isoVals = new float[resX * resY * resZ];
-	if (thresCmpArray != nullptr) delete[] thresCmpArray;
 	thresCmpArray = new float[resX * resY * resZ];
-	if (thresCmpIntArray != nullptr) delete[] thresCmpIntArray;
 	thresCmpIntArray = new int[resX * resY * resZ];
-	if (thresCmpShortArray != nullptr) delete[] thresCmpShortArray;
-	thresCmpShortArray = new short[resX * resY * resZ];
-	if (edgeInterpVal != nullptr) delete[] edgeInterpVal;
 	edgeInterpVal = new float[resX * resY * resZ * 3];
 
 	// Level-by-level
@@ -1362,14 +1353,21 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	//encodeIsoValsMorton();
 }
 
-//void MarchingCubes::wipeIsoValues( float value){
-//	
-//	std::fill(isoVals.begin(), isoVals.end(), value);
-//
-//}
 
 
 void MarchingCubes::clear(){
+	delete[] isoVals;
+	delete[] thresCmpArray;
+	delete[] thresCmpIntArray;
+	delete[] edgeInterpVal;
+
+	delete[] thresCmpLevel;
+	delete[] thresCmpLevelInt;
+	delete[] cubeIndexLevel;
+
+	delete[] vertIndexX;
+	delete[] zIndex_EdgeX;
+	delete[] edgeIndexArray;
 }
 
 void MarchingCubes::exportObj( string fileName ){
