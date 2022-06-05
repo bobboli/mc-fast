@@ -28,17 +28,17 @@ void MarchingCubes::setup(int resX, int resY, int resZ)
 	vertIndexY = vertIndexX + (sy1 * sz1);
 	vertIndexZ = vertIndexY + (sy1 * sz1 * 2);
 	int sz_xy = sy1 * sz1 * 3;
-	offsetLookUp[1] = sy1 * sz1 * 2; 		offsetLookUp[13] = sy1 * sz1;
-	offsetLookUp[2] = sz1;					offsetLookUp[14] = sz1;
-	offsetLookUp[3] = sy1 * sz1; 			offsetLookUp[15] = sy1 * sz1 * 2;
-	offsetLookUp[4] = 1; 					offsetLookUp[16] = 1;
-	offsetLookUp[5] = sy1 * sz1 * 2 + 1;	offsetLookUp[17] = sy1 * sz1 + 1;
-	offsetLookUp[6] = sz1 + 1;				offsetLookUp[18] = sz1 + 1;
-	offsetLookUp[7] = sy1 * sz1 + 1;		offsetLookUp[19] = sy1 * sz1 * 2 + 1;
-	offsetLookUp[8] = sz_xy;				offsetLookUp[20] = sz_xy + sy1 * sz1;
-	offsetLookUp[9] = sz_xy + sy1 * sz1;	offsetLookUp[21] = sz_xy;
+	offsetLookUp[1] = sy1 * sz1 * 2; 			offsetLookUp[13] = sy1 * sz1;
+	offsetLookUp[2] = sz1;						offsetLookUp[14] = sz1;
+	offsetLookUp[3] = sy1 * sz1; 				offsetLookUp[15] = sy1 * sz1 * 2;
+	offsetLookUp[4] = 1; 						offsetLookUp[16] = 1;
+	offsetLookUp[5] = sy1 * sz1 * 2 + 1;		offsetLookUp[17] = sy1 * sz1 + 1;
+	offsetLookUp[6] = sz1 + 1;					offsetLookUp[18] = sz1 + 1;
+	offsetLookUp[7] = sy1 * sz1 + 1;			offsetLookUp[19] = sy1 * sz1 * 2 + 1;
+	offsetLookUp[8] = sz_xy;					offsetLookUp[20] = sz_xy + sy1 * sz1;
+	offsetLookUp[9] = sz_xy + sy1 * sz1;		offsetLookUp[21] = sz_xy;
 	offsetLookUp[10] = sz_xy + (sy1 + 1) * sz1; offsetLookUp[22] = sz_xy + sz1;
-	offsetLookUp[11] = sz_xy + sz1;			offsetLookUp[23] = sz_xy + (sy1 + 1) * sz1;
+	offsetLookUp[11] = sz_xy + sz1;				offsetLookUp[23] = sz_xy + (sy1 + 1) * sz1;
 
 	reset();
 }
@@ -406,8 +406,10 @@ void MarchingCubes::polygonise_level(int level)
 
 				// Assembly triangles
 				int base = iCube + y; // y * sz1 + z;
+				int cnt = triTableCount[cubeIndex];
 				int* triTableEntry = triTable[cubeIndex];
-				for (int i = 0; triTableEntry[i] != -1; ++i)
+				// for (int i = 0; triTableEntry[i] != -1; ++i)
+				for (int i = 0; i < cnt; ++i)
 				{
 					int val = triTableEntry[i];
 					int idx = base + offsetLookUp[val + (level & 1) * 12];
