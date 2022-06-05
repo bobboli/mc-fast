@@ -48,7 +48,7 @@ void MarchingCubes::reset()
 	vertices.clear();
 	indices.clear();
 	int numEdges = resXm1 * (resYm1 + 1) * (resZm1 + 1) + resYm1 * (resXm1 + 1) * (resZm1 + 1) + resZm1 * (resXm1 + 1) * (resYm1 + 1);
-	const long long int pctInterpEdge = 10;  // Might be overflow here.
+	const long long int pctInterpEdge = 20;  // Might be overflow here.
 	int numEdgesInterp = numEdges * pctInterpEdge / 100;
 
 	vertices.reserve(numEdgesInterp);
@@ -685,7 +685,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 		}
 
 
-	#define VERTEX_INTERP_SIMD 0
+	#define VERTEX_INTERP_SIMD 1
 
 
 	#if VERTEX_INTERP_SIMD
@@ -693,6 +693,10 @@ void MarchingCubes::polygonise_level_vec(int level)
 		int numEdgeX = 0, numEdgeY = 0, numEdgeZ = 0;
 		int curNumVertices = vertices.size();
 		int oldNumVertices = curNumVertices;
+
+		__m256i c64 = _mm256_set1_epi32(64);
+		__m256i c32 = _mm256_set1_epi32(32);
+		__m256i c1024 = _mm256_set1_epi32(1024);
 
 		// First pass: Generate vertex indices. Generate a list of edges to be interpolated (CSR-like format).
 		// Does not really interpolate vertices.
@@ -710,37 +714,93 @@ void MarchingCubes::polygonise_level_vec(int level)
 				}
 			}
 
-			// todo: this step (especially & operation) should also be vectorized.
+			// todo: edgeIndex could be stored using short (16bit)? 
+			
+			{
+				int zz = 0;
+				for (; zz < sz - 7; zz+= 8)
+				{
+					__m256i edgeIndices = _mm256_load_si256((__m256i*) (edgeIndexArray + zz));
+					__m256i mask = _mm256_and_si256(edgeIndices, c64);
+					// todo: how to further vectorize this?
+					for (int i = 0; i < 8; ++i)
+					{
+						int z = zz + i;
+						if (mask.m256i_i32[i])
+						{
+							vertIndexX[(y + 1) * sz1 + (z + 1)] = curNumVertices++;
+							zIndex_EdgeX[numEdgeX++] = z;
+						}
+					}
+				}
+				for (int z = zz; z < sz; ++z)
+				{
+					if (edgeIndexArray[z] & 64)
+					{
+						vertIndexX[(y + 1) * sz1 + (z + 1)] = curNumVertices++;
+						zIndex_EdgeX[numEdgeX++] = z;
+					}
+				}
+			}
+			
+			/*
 			for (int z = 0; z < sz; ++z)
 			{
 				if (edgeIndexArray[z] & 64)
 				{
 					vertIndexX[(y + 1) * sz1 + (z + 1)] = curNumVertices++;
 					zIndex_EdgeX[numEdgeX++] = z;
-					//vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
-					//vertices.push_back(vert);
 				}
 			}
+			*/
+			
+			
+			{
+				int zz = 0;
+				for (; zz < sz - 7; zz += 8)
+				{
+					__m256i edgeIndices = _mm256_load_si256((__m256i*) (edgeIndexArray + zz));
+					__m256i mask = _mm256_and_si256(edgeIndices, c32);
+					// todo: how to further vectorize this?
+					for (int i = 0; i < 8; ++i)
+					{
+						int z = zz + i;
+						if (mask.m256i_i32[i])
+						{
+							vertIndexYNew[y * sz1 + (z + 1)] = curNumVertices++;
+							zIndex_EdgeY[numEdgeY++] = z;
+						}
+					}
+				}
+				for (int z = zz; z < sz; ++z)
+				{
+					if (edgeIndexArray[z] & 32)
+					{
+						vertIndexYNew[y * sz1 + (z + 1)] = curNumVertices++;
+						zIndex_EdgeY[numEdgeY++] = z;
+					}
+				}
+			}
+			
 
+			/*
 			for (int z = 0; z < sz; ++z)
 			{
 				if (edgeIndexArray[z] & 32)
 				{
 					vertIndexYNew[y * sz1 + (z + 1)] = curNumVertices++;
 					zIndex_EdgeY[numEdgeY++] = z;
-					//vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
-					//vertices.push_back(vert);
 				}
 			}
+			*/
 
+			
 			for (int z = 0; z < sz; ++z)
 			{
 				if (edgeIndexArray[z] & 1024)
 				{
 					vertIndexZNew[(y + 1) * sz1 + z] = curNumVertices++;
 					zIndex_EdgeZ[numEdgeZ++] = z;
-					//vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
-					//vertices.push_back(vert);
 				}
 
 				// Vertex indices could already be assembled at this time:
@@ -759,10 +819,9 @@ void MarchingCubes::polygonise_level_vec(int level)
 						++vertexCount;
 					}
 				}
-
-
 			}
 		}
+
 		yStart_EdgeX[sy] = numEdgeX;
 		yStart_EdgeY[sy] = numEdgeY;
 		yStart_EdgeZ[sy] = numEdgeZ;
