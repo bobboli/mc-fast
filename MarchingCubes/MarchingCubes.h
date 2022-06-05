@@ -77,9 +77,7 @@ public:
 	MarchingCubes();
 	~MarchingCubes();
 
-	void setMaxVertexCount(int _maxVertexCount = 100000);
-
-	void setup(int resX = 30, int resY = 20, int resZ = 30, int _maxVertexCount = 200000);
+	void setup(int resX = 30, int resY = 20, int resZ = 30);
 	void reset();
 	void update() { update(threshold); }
 	void update(float _threshold);
@@ -169,7 +167,7 @@ public:
 	vector<Vector3f> vertices;
 	vector<Vector3f> normals;
 	vector<int> indices;
-	int vertexCount, maxVertexCount;
+	int vertexCount;
 
 
 	Vector3f vertList[12], normList[12];

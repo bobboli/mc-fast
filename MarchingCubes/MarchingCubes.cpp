@@ -11,18 +11,14 @@ MarchingCubes::~MarchingCubes() {
 	clear();
 }
 
-void MarchingCubes::setMaxVertexCount( int _maxVertexCount ){
-	maxVertexCount = _maxVertexCount;
-}
 
 
-void MarchingCubes::setup(int resX, int resY, int resZ, int _maxVertexCount)
+void MarchingCubes::setup(int resX, int resY, int resZ)
 {
 	clear();
 
 
 	setResolution(resX, resY, resZ);
-	setMaxVertexCount(_maxVertexCount);
 
 	vertexCount = 0;
 
