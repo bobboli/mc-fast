@@ -701,6 +701,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 
 		// First pass: Generate vertex indices. Generate a list of edges to be interpolated (CSR-like format).
 		// Does not really interpolate vertices.
+		
 		for (int y = 0; y < sy; ++y)
 		{
 			yStart_EdgeX[y] = numEdgeX;
@@ -776,9 +777,42 @@ void MarchingCubes::polygonise_level_vec(int level)
 		yStart_EdgeZ[sy] = numEdgeZ;
 
 
+
 		// Second pass: Interpolate vertices and assemble triangles.
 		vertices.resize(curNumVertices);
 
+	#if 0
+		// Non-SIMD vertex interpolation.
+		for (int y = 0; y < sy; ++y)
+		{
+
+			// Interpolate vertices on Edge X. 
+			for (int i = yStart_EdgeX[y]; i < yStart_EdgeX[y + 1]; ++i)
+			{
+				int z = zIndex_EdgeX[i];  // All z's that should be interpolated
+				vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
+				vertices[oldNumVertices++] = vert;
+			}
+
+			// Interpolate vertices on Edge Y. 
+			for (int i = yStart_EdgeY[y]; i < yStart_EdgeY[y + 1]; ++i)
+			{
+				int z = zIndex_EdgeY[i];  // All z's that should be interpolated
+				vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
+				vertices[oldNumVertices++] = vert;
+			}
+
+			// Interpolate vertices on Edge X. 
+			for (int i = yStart_EdgeZ[y]; i < yStart_EdgeZ[y + 1]; ++i)
+			{
+				int z = zIndex_EdgeZ[i];  // All z's that should be interpolated
+				vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
+				vertices[oldNumVertices++] = vert;
+			}
+		}
+
+
+	#else
 		__m256 cdx = _mm256_set1_ps(dx);
 		__m256 cdy = _mm256_set1_ps(dy);
 		__m256 cdz = _mm256_set1_ps(dz);
@@ -950,8 +984,9 @@ void MarchingCubes::polygonise_level_vec(int level)
 				vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
 				vertices[oldNumVertices++] = vert;
 			}
-			
 		}
+
+	#endif
 	}
 }
 
