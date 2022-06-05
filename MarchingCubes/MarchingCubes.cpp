@@ -495,7 +495,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 
 	__m256 vt = _mm256_set1_ps(threshold);
 	__m256 c1 = _mm256_set1_ps(1);
-	int dx = sz1 * sy1, dy = sz1;
+	int DX = sz1 * sy1, DY = sz1;
 
 	// Threshold computing
 	if (level == 0)
@@ -505,7 +505,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 			int z;
 			for (z = 0; z < sz1 - 7; z += 8)
 			{
-				int idx = y * dy + z;
+				int idx = y * DY + z;
 				__m256 vals = _mm256_loadu_ps(isoVals + idx);
 				__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
 				__m256 res = _mm256_and_ps(cmp, c1);
@@ -513,21 +513,21 @@ void MarchingCubes::polygonise_level_vec(int level)
 			}
 			for (; z < sz1; ++z)
 			{
-				int idx = y * dy + z;
+				int idx = y * DY + z;
 				thresCmpOld[idx] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
 			}
 		}
 	}
 
 	{
-		int base = x1 * dx;
+		int base = x1 * DX;
 		for (int y = 0; y < sy1; ++y)
 		{
 			int z;
 			for (z = 0; z < sz1 - 7; z += 8)
 			{
-				int idx = base + y * dy + z;
-				int level_idx = y * dy + z;
+				int idx = base + y * DY + z;
+				int level_idx = y * DY + z;
 
 				__m256 vals = _mm256_loadu_ps(isoVals + idx);
 				__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
@@ -536,7 +536,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 			}
 			for (; z < sz1; ++z)
 			{
-				int idx = y * dy + z;
+				int idx = y * DY + z;
 				thresCmpNew[idx] = getIsoValue(x1, y, z) > threshold;//isoVals[iGrid] > threshold;
 			}
 		}
@@ -550,16 +550,16 @@ void MarchingCubes::polygonise_level_vec(int level)
 			int z = 0;
 			for (z = 0; z < sz - 7; z += 8)
 			{
-				int base = y * dy + z;
+				int base = y * DY + z;
 				int idx = y * sz + z;
 				__m256i b_000 = _mm256_loadu_epi32(thresCmpOld + base);
 				__m256i b_001 = _mm256_loadu_epi32(thresCmpOld + base + 1);
-				__m256i b_010 = _mm256_loadu_epi32(thresCmpOld + base + dy);
-				__m256i b_011 = _mm256_loadu_epi32(thresCmpOld + base + dy + 1);
+				__m256i b_010 = _mm256_loadu_epi32(thresCmpOld + base + DY);
+				__m256i b_011 = _mm256_loadu_epi32(thresCmpOld + base + DY + 1);
 				__m256i b_100 = _mm256_loadu_epi32(thresCmpNew + base);
 				__m256i b_101 = _mm256_loadu_epi32(thresCmpNew + base + 1);
-				__m256i b_110 = _mm256_loadu_epi32(thresCmpNew + base + dy);
-				__m256i b_111 = _mm256_loadu_epi32(thresCmpNew + base + dy + 1);
+				__m256i b_110 = _mm256_loadu_epi32(thresCmpNew + base + DY);
+				__m256i b_111 = _mm256_loadu_epi32(thresCmpNew + base + DY + 1);
 				__m256i bs_100 = _mm256_slli_epi32(b_100, 1);
 				__m256i bs_110 = _mm256_slli_epi32(b_110, 2);
 				__m256i bs_010 = _mm256_slli_epi32(b_010, 3);
@@ -778,11 +778,71 @@ void MarchingCubes::polygonise_level_vec(int level)
 
 		// Second pass: Interpolate vertices and assemble triangles.
 		vertices.resize(curNumVertices);
+
+		__m256 cdx = _mm256_set1_ps(dx);
+		__m256 cdy = _mm256_set1_ps(dy);
+		__m256 cdz = _mm256_set1_ps(dz);
+
+		__m256 cx = _mm256_set1_ps(x);
+		__m256 p1x = _mm256_mul_ps(cdx, cx);
+		__m256 c0 = _mm256_set1_ps(0);
+		__m256 c1 = _mm256_set1_ps(1);
+		__m256i c1i = _mm256_set1_epi32(1);
+		float vert_x1 = x * dx;
+		float vert_x2 = vert_x1 + dx;
 		for (int y = 0; y < sy; ++y)
 		{
+			float vert_y1 = dy * y;
+			float vert_y2 = vert_y1 + dy;
+			int basex = x * DX + (y+1) * DY;
+			int basey = (x+1) * DX + y * DY;
+			int basez = (x+1) * DX + (y+1) * DY;
+			__m256 p1y = _mm256_mul_ps(cdy, _mm256_set1_ps(y));
 
 			// Interpolate vertices on Edge X. 
-			for (int i = yStart_EdgeX[y]; i < yStart_EdgeX[y + 1]; ++i)
+			int i = yStart_EdgeX[y];
+			for (i = yStart_EdgeX[y]; i < yStart_EdgeX[y + 1] - 7; i += 8)
+			{
+				__m256i idx = _mm256_loadu_epi32(zIndex_EdgeX + i); // z
+				idx = _mm256_add_epi32(idx, c1i);  // z+1
+				__m256 val_start = _mm256_i32gather_ps(isoVals + basex, idx, 4);
+				__m256 val_end = _mm256_i32gather_ps(isoVals + basex + DX, idx, 4);
+				__m256 denominator = _mm256_sub_ps(val_end, val_start);
+				__m256 numerator = _mm256_sub_ps(vt, val_start);
+				__m256 tmp = _mm256_sub_ps(vt, val_end);
+				__m256 lerp = _mm256_div_ps(numerator, denominator);
+				__m256 dp = _mm256_mul_ps(cdx, lerp);
+				__m256 px = _mm256_add_ps(p1x, dp);
+
+				vert.y = vert_y2;
+				for (int j = 0; j < 8; ++j)
+				{
+					vert.z = (idx.m256i_i32[j]) * dz;
+					// there is no m256 abs ps
+					if (abs(denominator.m256_f32[j]) < 0.0001)
+					{
+						vert.x = vert_x1;
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+					if (abs(numerator.m256_f32[j]) < 0.0001)
+					{
+						vert.x = vert_x1;
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+					if (abs(tmp.m256_f32[j]) < 0.0001)
+					{
+						vert.x = vert_x2;
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+										
+					vert.x = px.m256_f32[j];
+					vertices[oldNumVertices++] = vert;
+				}
+			}
+			for (; i < yStart_EdgeX[y + 1]; i++)
 			{
 				int z = zIndex_EdgeX[i];  // All z's that should be interpolated
 				vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
@@ -790,17 +850,103 @@ void MarchingCubes::polygonise_level_vec(int level)
 			}
 
 			// Interpolate vertices on Edge Y. 
-			for (int i = yStart_EdgeY[y]; i < yStart_EdgeY[y + 1]; ++i)
+			for (i = yStart_EdgeY[y]; i < yStart_EdgeY[y + 1] - 7; i += 8)
 			{
-				int z = zIndex_EdgeY[i];  // All z's that should be interpolated
+				__m256i idx = _mm256_loadu_epi32(zIndex_EdgeY + i); // z
+				idx = _mm256_add_epi32(idx, c1i);  // z+1
+				__m256 val_start = _mm256_i32gather_ps(isoVals + basey, idx, 4); // x+1 y z+1
+				__m256 val_end = _mm256_i32gather_ps(isoVals + basey + DY, idx, 4); // x+1 y+1 z+1
+				__m256 denominator = _mm256_sub_ps(val_end, val_start);
+				__m256 numerator = _mm256_sub_ps(vt, val_start);
+				__m256 tmp = _mm256_sub_ps(vt, val_end);
+				__m256 lerp = _mm256_div_ps(numerator, denominator);
+				__m256 dp = _mm256_mul_ps(cdy, lerp);
+				__m256 py = _mm256_add_ps(p1y, dp);
+
+				vert.x = vert_x2;
+				for (int j = 0; j < 8; ++j)
+				{
+					vert.z = (idx.m256i_i32[j]) * dz;
+					// there is no m256 abs ps
+					if (abs(denominator.m256_f32[j]) < 0.0001)
+					{
+						vert.y = vert_y1;
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+					if (abs(numerator.m256_f32[j]) < 0.0001)
+					{
+						vert.y = vert_y1;
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+					if (abs(tmp.m256_f32[j]) < 0.0001)
+					{
+						vert.y = vert_y2;
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+
+					vert.y = py.m256_f32[j];
+					vertices[oldNumVertices++] = vert;
+				}
+			}
+
+			for (; i < yStart_EdgeY[y + 1]; ++i)
+			{
+				int z = zIndex_EdgeY[i];
 				vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
 				vertices[oldNumVertices++] = vert;
 			}
 
-			// Interpolate vertices on Edge X. 
-			for (int i = yStart_EdgeZ[y]; i < yStart_EdgeZ[y + 1]; ++i)
+			// Interpolate vertices on Edge Z. 
+			for (i = yStart_EdgeZ[y]; i < yStart_EdgeZ[y + 1] - 7; i += 8)
 			{
-				int z = zIndex_EdgeZ[i];  // All z's that should be interpolated
+				__m256i idx = _mm256_loadu_epi32(zIndex_EdgeZ + i); // z
+				__m256i idx1 = _mm256_add_epi32(idx, c1i);  // z+1
+				__m256 p1z = _mm256_mul_ps(cdz, _mm256_cvtepi32_ps(idx));
+				__m256 p2z = _mm256_mul_ps(cdz, _mm256_cvtepi32_ps(idx1));
+				__m256 val_start = _mm256_i32gather_ps(isoVals + basez, idx, 4); // x+1 y+1 z
+				__m256 val_end = _mm256_i32gather_ps(isoVals + basez, idx1, 4); // x+1 y+1 z+1
+				__m256 denominator = _mm256_sub_ps(val_end, val_start);
+				__m256 numerator = _mm256_sub_ps(vt, val_start);
+				__m256 tmp = _mm256_sub_ps(vt, val_end);
+				__m256 lerp = _mm256_div_ps(numerator, denominator);
+				__m256 dp = _mm256_mul_ps(cdz, lerp);
+				__m256 pz = _mm256_add_ps(p1z, dp);
+
+				vert.x = vert_x2;
+				vert.y = vert_y2;
+				for (int j = 0; j < 8; ++j)
+				{
+					// there is no m256 abs ps
+					if (abs(denominator.m256_f32[j]) < 0.0001)
+					{
+						vert.z = p1z.m256_f32[j];
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+					if (abs(numerator.m256_f32[j]) < 0.0001)
+					{
+						vert.z = p1z.m256_f32[j];
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+					if (abs(tmp.m256_f32[j]) < 0.0001)
+					{
+						vert.z = p2z.m256_f32[j];
+						vertices[oldNumVertices++] = vert;
+						continue;
+					}
+
+					vert.z = pz.m256_f32[j];
+					vertices[oldNumVertices++] = vert;
+				}
+			}
+
+			for (; i < yStart_EdgeZ[y + 1]; ++i)
+			{
+				int z = zIndex_EdgeZ[i];
 				vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
 				vertices[oldNumVertices++] = vert;
 			}
