@@ -16,7 +16,6 @@ MarchingCubes::~MarchingCubes() {
 
 void MarchingCubes::setMaxVertexCount( int _maxVertexCount ){
 	maxVertexCount = _maxVertexCount;
-	beenWarned = false;
 }
 
 
@@ -984,60 +983,60 @@ void MarchingCubes::polygonise_level_vec(int level)
 	}
 }
 
-void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& counts) {
+void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& counts)
+{
 
-	if (vertexCount + 3 < maxVertexCount) {
-		int cubeindex = 0;
-		int i1 = min(i + 1, resXm1), j1 = min(j + 1, resYm1), k1 = min(k + 1, resZm1);
-		cubeindex |= getIsoValue(i, j, k) > threshold ? 1 : 0;
-		cubeindex |= getIsoValue(i1, j, k) > threshold ? 2 : 0;
-		cubeindex |= getIsoValue(i1, j1, k) > threshold ? 4 : 0;
-		cubeindex |= getIsoValue(i, j1, k) > threshold ? 8 : 0;
-		cubeindex |= getIsoValue(i, j, k1) > threshold ? 16 : 0;
-		cubeindex |= getIsoValue(i1, j, k1) > threshold ? 32 : 0;
-		cubeindex |= getIsoValue(i1, j1, k1) > threshold ? 64 : 0;
-		cubeindex |= getIsoValue(i, j1, k1) > threshold ? 128 : 0;
-		// 8 float cmps
-		counts.fl_cmp += 8;
+	int cubeindex = 0;
+	int i1 = min(i + 1, resXm1), j1 = min(j + 1, resYm1), k1 = min(k + 1, resZm1);
+	cubeindex |= getIsoValue(i, j, k) > threshold ? 1 : 0;
+	cubeindex |= getIsoValue(i1, j, k) > threshold ? 2 : 0;
+	cubeindex |= getIsoValue(i1, j1, k) > threshold ? 4 : 0;
+	cubeindex |= getIsoValue(i, j1, k) > threshold ? 8 : 0;
+	cubeindex |= getIsoValue(i, j, k1) > threshold ? 16 : 0;
+	cubeindex |= getIsoValue(i1, j, k1) > threshold ? 32 : 0;
+	cubeindex |= getIsoValue(i1, j1, k1) > threshold ? 64 : 0;
+	cubeindex |= getIsoValue(i, j1, k1) > threshold ? 128 : 0;
+	// 8 float cmps
+	counts.fl_cmp += 8;
 
-		if (edgeTable[cubeindex] == 0)
-		{
-			counts.empty_cells += 1;
-			return;
-		}
+	if (edgeTable[cubeindex] == 0)
+	{
+		counts.empty_cells += 1;
+		return;
+	}
 
-		if (edgeTable[cubeindex] & 1)		vertexInterp_count_ops(threshold, i, j, k, i1, j, k, counts);
-		if (edgeTable[cubeindex] & 2)		vertexInterp_count_ops(threshold, i1, j, k, i1, j1, k, counts);
-		if (edgeTable[cubeindex] & 4)		vertexInterp_count_ops(threshold, i1, j1, k, i, j1, k, counts);
-		if (edgeTable[cubeindex] & 8)		vertexInterp_count_ops(threshold, i, j1, k, i, j, k, counts);
-		if (edgeTable[cubeindex] & 16)		vertexInterp_count_ops(threshold, i, j, k1, i1, j, k1, counts);
-		if (edgeTable[cubeindex] & 32)		vertexInterp_count_ops(threshold, i1, j, k1, i1, j1, k1, counts);
-		if (edgeTable[cubeindex] & 64)		vertexInterp_count_ops(threshold, i1, j1, k1, i, j1, k1, counts);
-		if (edgeTable[cubeindex] & 128)		vertexInterp_count_ops(threshold, i, j1, k1, i, j, k1, counts);
-		if (edgeTable[cubeindex] & 256)		vertexInterp_count_ops(threshold, i, j, k, i, j, k1, counts);
-		if (edgeTable[cubeindex] & 512)		vertexInterp_count_ops(threshold, i1, j, k, i1, j, k1, counts);
-		if (edgeTable[cubeindex] & 1024)	vertexInterp_count_ops(threshold, i1, j1, k, i1, j1, k1, counts);
-		if (edgeTable[cubeindex] & 2048)	vertexInterp_count_ops(threshold, i, j1, k, i, j1, k1, counts);
+	if (edgeTable[cubeindex] & 1)		vertexInterp_count_ops(threshold, i, j, k, i1, j, k, counts);
+	if (edgeTable[cubeindex] & 2)		vertexInterp_count_ops(threshold, i1, j, k, i1, j1, k, counts);
+	if (edgeTable[cubeindex] & 4)		vertexInterp_count_ops(threshold, i1, j1, k, i, j1, k, counts);
+	if (edgeTable[cubeindex] & 8)		vertexInterp_count_ops(threshold, i, j1, k, i, j, k, counts);
+	if (edgeTable[cubeindex] & 16)		vertexInterp_count_ops(threshold, i, j, k1, i1, j, k1, counts);
+	if (edgeTable[cubeindex] & 32)		vertexInterp_count_ops(threshold, i1, j, k1, i1, j1, k1, counts);
+	if (edgeTable[cubeindex] & 64)		vertexInterp_count_ops(threshold, i1, j1, k1, i, j1, k1, counts);
+	if (edgeTable[cubeindex] & 128)		vertexInterp_count_ops(threshold, i, j1, k1, i, j, k1, counts);
+	if (edgeTable[cubeindex] & 256)		vertexInterp_count_ops(threshold, i, j, k, i, j, k1, counts);
+	if (edgeTable[cubeindex] & 512)		vertexInterp_count_ops(threshold, i1, j, k, i1, j, k1, counts);
+	if (edgeTable[cubeindex] & 1024)	vertexInterp_count_ops(threshold, i1, j1, k, i1, j1, k1, counts);
+	if (edgeTable[cubeindex] & 2048)	vertexInterp_count_ops(threshold, i, j1, k, i, j1, k1, counts);
 
-		for (i = 0; triTable[cubeindex][i] != -1; i += 3) {
-			// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
-			// Vector3f b = vertList[triTable[cubeindex][i + 2]] - vertList[triTable[cubeindex][i + 1]];
+	for (i = 0; triTable[cubeindex][i] != -1; i += 3)
+	{
+		// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
+		// Vector3f b = vertList[triTable[cubeindex][i + 2]] - vertList[triTable[cubeindex][i + 1]];
 
-			//counts.fl_add += 6;
+		//counts.fl_add += 6;
 
-			/*vertices[vertexCount] = vertList[triTable[cubeindex][i]];
-			vertices[vertexCount + 1] = vertList[triTable[cubeindex][i + 1]];
-			vertices[vertexCount + 2] = vertList[triTable[cubeindex][i + 2]];*/
+		/*vertices[vertexCount] = vertList[triTable[cubeindex][i]];
+		vertices[vertexCount + 1] = vertList[triTable[cubeindex][i + 1]];
+		vertices[vertexCount + 2] = vertList[triTable[cubeindex][i + 2]];*/
 
-			vertexCount += 3;
-		}
+		vertexCount += 3;
 	}
 }
 
 inline void MarchingCubes::vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n){
 	
-	Vector3f p1 = getGridPoint(i1,j1,k1);
-	Vector3f p2 = getGridPoint(i2,j2,k2);
+	Vector3f p1 = Vector3f(i1 * dx, j1 * dy, k1 * dz);
+	Vector3f p2 = Vector3f(i2 * dx, j2 * dy, k2 * dz);
 	
 	float iso1 = getIsoValue(i1,j1,k1);
 	float iso2 = getIsoValue(i2,j2,k2);
@@ -1187,8 +1186,8 @@ void MarchingCubes::vertexInterp_Z(float threshold, int x, int y, int z1, int z2
 
 void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f& v, Vector3f& n) {
 
-	Vector3f p1 = getGridPoint(i1, j1, k1);
-	Vector3f p2 = getGridPoint(i2, j2, k2);
+	Vector3f p1 = Vector3f(i1 * dx, j1 * dy, k1 * dz);
+	Vector3f p2 = Vector3f(i2 * dx, j2 * dy, k2 * dz);
 	float iso1 = getIsoValue(i1, j1, k1);
 	float iso2 = getIsoValue(i2, j2, k2);
 
@@ -1245,8 +1244,8 @@ void MarchingCubes::vertexInterp_vec(float threshold, int i1, int j1, int k1, in
 
 void MarchingCubes::vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts& counts) {
 
-	Vector3f p1 = getGridPoint(i1, j1, k1);
-	Vector3f p2 = getGridPoint(i2, j2, k2);
+	Vector3f p1 = Vector3f(i1 * dx, j1 * dy, k1 * dz);
+	Vector3f p2 = Vector3f(i2 * dx, j2 * dy, k2 * dz);
 
 	float iso1 = getIsoValue(i1, j1, k1);
 	float iso2 = getIsoValue(i2, j2, k2);
@@ -1292,64 +1291,6 @@ void MarchingCubes::computeNormal( int i, int j, int k ) {
 		//getGridPointComputed(i,j,k) = 1;
 };
 
-//void ofxMarchingCubes::drawArrays( vector<Vector3f>* _vertices, vector<Vector3f>* _normals){
-//	
-//	glEnableClientState(GL_VERTEX_ARRAY);
-//	glVertexPointer(3, GL_FLOAT, sizeof((*_vertices)[0]), &(*_vertices)[0].x);
-//	
-//	if(_normals != NULL){
-//		glEnableClientState(GL_NORMAL_ARRAY);
-//		glNormalPointer( GL_FLOAT, sizeof((*_normals)[0]), &(*_normals)[0].x);
-//	}
-//	
-//	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
-//	
-//	glDisableClientState(GL_VERTEX_ARRAY);
-//	if(_normals != NULL)	glDisableClientState(GL_NORMAL_ARRAY);
-//	
-//}
-
-void MarchingCubes::setGridPoints( float _x, float _y, float _z){
-	cellDim = Vector3f( 1.f/resXm1, 1.f/resYm1, 1.f/resZm1 );
-	
-	for(int i=0; i<resX; i++){
-		for(int j=0; j<resY; j++){
-			for(int k=0; k<resZ; k++){
-				gridPoints[i * resY * resZ + j * resZ + k].set(float(i)*cellDim.x,
-											float(j)*cellDim.y,
-											float(k)*cellDim.z);
-			}
-		}
-	}
-
-	//gridPointsVbo.setVertexData( gridPoints[0].getPtr(), 3, gridPoints.size(), GL_STATIC_DRAW );
-}
-
-
-
-//void ofxMarchingCubes::drawWireframe(){
-//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-//	draw();
-//	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-//}
-//
-//void ofxMarchingCubes::drawGrid( bool drawGridPoints){
-//	
-//	ofPushMatrix();
-//	ofMultMatrix( transform.getPtr() );
-//	
-//	if(drawGridPoints){
-//		ofSetColor(128);
-//		glPointSize(1);
-//		gridPointsVbo.draw(GL_POINTS, 0, gridPointsVbo.getNumVertices());
-//	}
-//	
-//	ofColor(255);
-//	ofSetLineWidth(1.5);
-//	boundaryVbo.draw(GL_LINES, 0, boundaryVbo.getNumVertices());
-//	
-//	ofPopMatrix();
-//}
 
 void MarchingCubes::setIsoValue( int x, int y, int z, float value){
 	isoVals[min(sx, x) * resY * resZ + min(sy, y) * resZ + min(sz, z)] = value;
@@ -1390,8 +1331,6 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	dy = 1.0 / sy;
 	dz = 1.0 / sz;
 	
-	gridPoints.resize( resX*resY*resZ );
-	
 	if (isoVals != nullptr) delete[] isoVals;
 	isoVals = new float[resX * resY * resZ];
 	if (thresCmpArray != nullptr) delete[] thresCmpArray;
@@ -1402,8 +1341,6 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 	thresCmpShortArray = new short[resX * resY * resZ];
 	if (edgeInterpVal != nullptr) delete[] edgeInterpVal;
 	edgeInterpVal = new float[resX * resY * resZ * 3];
-
-	setGridPoints( resX*10, resY*10, resZ*10 );
 
 	// Level-by-level
 	thresCmpLevel = new bool[2 * sy1 * sz1];
@@ -1433,7 +1370,6 @@ void MarchingCubes::setResolution( int _x, int _y, int _z ){
 
 
 void MarchingCubes::clear(){
-	gridPoints.clear();
 }
 
 void MarchingCubes::exportObj( string fileName ){

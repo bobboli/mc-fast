@@ -133,17 +133,8 @@ public:
 	bool getSmoothing() { return bSmoothed; }
 	void setSmoothing(bool _bSmooth) { bSmoothed = _bSmooth; }
 
-	//void wipeIsoValues(float value = 0.f);
 
 	void clear(); // deletes all the data. use whip
-
-	void setGridPoints(float _x, float _y, float _z);
-
-	// void updateTransformMatrix(){
-	//	transform.makeScaleMatrix( scale );
-	//	transform.rotate( orientation );
-	//	transform.setTranslation( position );
-	// }
 
 	inline float MarchingCubes::getIsoValue(int x, int y, int z)
 	{
@@ -156,10 +147,6 @@ public:
 	//	return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
 	//}
 
-	inline Vector3f getGridPoint(int x, int y, int z)
-	{
-		return gridPoints[x * resY * resZ + y * resZ + z];
-	}
 
 	void exportObj(string fileName);
 
@@ -173,9 +160,6 @@ public:
 	float dx, dy, dz;
 
 	float flipNormalsValue;
-	Vector3f cellDim;
-	//vector<float> isoVals;
-	vector<Vector3f> gridPoints;
 
 	float* isoVals = nullptr;
 	float* thresCmpArray = nullptr;
