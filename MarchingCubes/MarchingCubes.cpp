@@ -687,7 +687,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 		}
 
 
-	#define VERTEX_INTERP_SIMD 1
+	#define VERTEX_INTERP_SIMD 0
 
 
 	#if VERTEX_INTERP_SIMD
