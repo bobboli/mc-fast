@@ -684,13 +684,18 @@ void MarchingCubes::polygonise_level_vec(int level)
 			}
 		}
 
+
+	#define VERTEX_INTERP_SIMD 0
+
+
+	#if VERTEX_INTERP_SIMD
+
 		int numEdgeX = 0, numEdgeY = 0, numEdgeZ = 0;
 		int curNumVertices = vertices.size();
 		int oldNumVertices = curNumVertices;
 
 		// First pass: Generate vertex indices. Generate a list of edges to be interpolated (CSR-like format).
 		// Does not really interpolate vertices.
-		
 		for (int y = 0; y < sy; ++y)
 		{
 			yStart_EdgeX[y] = numEdgeX;
@@ -767,7 +772,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 		// Second pass: Interpolate vertices and assemble triangles.
 		vertices.resize(curNumVertices);
 
-	#if 0
+		#if 0
 		// Non-SIMD vertex interpolation.
 		for (int y = 0; y < sy; ++y)
 		{
@@ -798,7 +803,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 		}
 
 
-	#else
+		#else
 		__m256 cdx = _mm256_set1_ps(dx);
 		__m256 cdy = _mm256_set1_ps(dy);
 		__m256 cdz = _mm256_set1_ps(dz);
@@ -969,6 +974,52 @@ void MarchingCubes::polygonise_level_vec(int level)
 				int z = zIndex_EdgeZ[i];
 				vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
 				vertices[oldNumVertices++] = vert;
+			}
+		}
+
+		#endif
+
+	#else
+		for (int y = 0; y < sy; ++y)
+		{
+			for (int z = 0; z < sz; ++z)
+			{
+				int iCube = y * sz + z;
+				int cubeIndex = cubeIndexLevel[iCube];
+				int edgeIndex = edgeTable[cubeIndex];
+				if (edgeIndex & 64)
+				{
+					vertIndexX[(y + 1) * sz1 + (z + 1)] = vertices.size();
+					vertexInterp_X(threshold, x, x + 1, y + 1, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+				if (edgeIndex & 32)
+				{
+					vertIndexYNew[y * sz1 + (z + 1)] = vertices.size();
+					vertexInterp_Y(threshold, x + 1, y, y + 1, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+				if (edgeIndex & 1024)
+				{
+					vertIndexZNew[(y + 1) * sz1 + z] = vertices.size();
+					vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
+					vertices.push_back(vert);
+				}
+
+				// Assembly triangles
+				int base = iCube + y; // y * sz1 + z;
+				int* triTableEntry = triTable[cubeIndex];
+				for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
+				{
+					for (int tj = 0; tj < 3; tj++)
+					{
+						int val = triTable[cubeIndex][ti + tj];
+						int idx = base + offsetLookUp[val + (level & 1) * 12];
+						int vertIndex = vertIndexX[idx];
+						indices.push_back(vertIndex);
+						++vertexCount;
+					}
+				}
 			}
 		}
 
