@@ -1,1 +1,0 @@
-[link to timing sheets](https://docs.google.com/spreadsheets/d/19mwZIxtng5aHPrvuZ4toEVRQuBTAi8p2Kg4gsOwLmvU/edit?usp=sharing)

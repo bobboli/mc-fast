@@ -48,7 +48,7 @@ void SetupFromVolFile(MarchingCubes& mc, char* filename)
     resY = _byteswap_ulong(big_endian);
     ifs.read((char*)&big_endian, sizeof(uint32_t));
     resZ = _byteswap_ulong(big_endian);
-    mc.setup(resX, resY, resZ, 2000000);
+    mc.setup(resX, resY, resZ);
 
     // useless data
     ifs.read((char*)&big_endian, sizeof(uint32_t));
