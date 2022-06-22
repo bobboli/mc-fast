@@ -897,8 +897,9 @@ void MarchingCubes::polygonise_level_vec(int level)
 				__m256 numerator = _mm256_sub_ps(vt, val_start);
 				__m256 tmp = _mm256_sub_ps(vt, val_end);
 				__m256 lerp = _mm256_div_ps(numerator, denominator);
-				__m256 dp = _mm256_mul_ps(cdx, lerp);
-				__m256 px = _mm256_add_ps(p1x, dp);
+				/*__m256 dp = _mm256_mul_ps(cdx, lerp);
+				__m256 px = _mm256_add_ps(p1x, dp);*/
+				__m256 px = _mm256_fmadd_ps(cdx, lerp, p1x);
 
 				vert.y = vert_y2;
 				for (int j = 0; j < 8; ++j)
@@ -946,8 +947,9 @@ void MarchingCubes::polygonise_level_vec(int level)
 				__m256 numerator = _mm256_sub_ps(vt, val_start);
 				__m256 tmp = _mm256_sub_ps(vt, val_end);
 				__m256 lerp = _mm256_div_ps(numerator, denominator);
-				__m256 dp = _mm256_mul_ps(cdy, lerp);
-				__m256 py = _mm256_add_ps(p1y, dp);
+				/*__m256 dp = _mm256_mul_ps(cdy, lerp);
+				__m256 py = _mm256_add_ps(p1y, dp);*/
+				__m256 py = _mm256_fmadd_ps(cdy, lerp, p1y);
 
 				vert.x = vert_x2;
 				for (int j = 0; j < 8; ++j)
@@ -998,8 +1000,9 @@ void MarchingCubes::polygonise_level_vec(int level)
 				__m256 numerator = _mm256_sub_ps(vt, val_start);
 				__m256 tmp = _mm256_sub_ps(vt, val_end);
 				__m256 lerp = _mm256_div_ps(numerator, denominator);
-				__m256 dp = _mm256_mul_ps(cdz, lerp);
-				__m256 pz = _mm256_add_ps(p1z, dp);
+				/*__m256 dp = _mm256_mul_ps(cdz, lerp);
+				__m256 pz = _mm256_add_ps(p1z, dp);*/
+				__m256 pz = _mm256_fmadd_ps(cdz, lerp, p1z);
 
 				vert.x = vert_x2;
 				vert.y = vert_y2;

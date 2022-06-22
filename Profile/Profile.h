@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define NUM_RUNS 10
+#define NUM_RUNS 1
 #define CYCLES_REQUIRED 1e8
 #define CALIBRATE
 #define FREQUENCY 2.8e9
