@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 		//const float radius = 0.4;
 		mc.update(radius);
 		//mc.exportObj("Sphere");
-		printf("%d\n", mc.vertexCount);
+		printf("%d\n", mc.vertices.size());
 
 		// baseline timing
 		void (MarchingCubes:: * ptr_update)(float) = &MarchingCubes::update;
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 		//SetSphere(mc_l);
 		SetRandom(mc_l);
 		mc_l.update_level(radius);
-		printf("%d\n", mc_l.vertexCount);
+		printf("%d\n", mc_l.vertices.size());
 		//mc_l.exportObj("Sphere_level");
 
 		// Level-by-level timing
@@ -98,7 +98,7 @@ int main(int argc, char** argv)
 		//SetSphere(mc_lv);
 		SetRandom(mc_lv);
 		mc_lv.update_level_vec(radius);
-		printf("%d\n", mc_lv.vertexCount);
+		printf("%d\n", mc_lv.vertices.size());
 		//mc_lv.exportObj("Sphere_level_vec");
 
 		// Level-by-level vectorization timing
