@@ -2,6 +2,7 @@
 //
 
 #include "Profile.h"
+#include "SimplexNoise.h"
 
 void SetSphere(MarchingCubes& mc)
 {
@@ -33,7 +34,12 @@ void SetRandom(MarchingCubes& mc, float _lo = -1.0, float _hi = 1.0)
 		{
 			for (int k = 0; k < mc.resZ; k++)
 			{
-				float val = _lo + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (_hi - _lo)));
+				float freq = 20.0;
+				//float val = _lo + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (_hi - _lo)));
+				float x = 1.0f * i / mc.resX;
+				float y = 1.0f * j / mc.resY;
+				float z = 1.0f * k / mc.resZ;
+				float val = SimplexNoise::noise(freq*x, freq*y, freq*z);
 				mc.setIsoValue(i, j, k, val);
 			}
 		}
@@ -50,7 +56,13 @@ int main(int argc, char** argv)
 	//int blockZ = atoi(argv[5]);
 	//printf("resolution=%d\n", res);
 
-	float radius = 0.4;
+	bool bUseSphere = false;
+
+	float radius = 0.0;  // For Perlin noise use this!
+	if(bUseSphere)
+		radius = 0.4;
+	
+
 	int resx = 200, resy = 200, resz= 200;
 	int blockX = 10, blockY = 10, blockZ = 10;
 
@@ -99,7 +111,7 @@ int main(int argc, char** argv)
 		SetRandom(mc_lv);
 		mc_lv.update_level_vec(radius);
 		printf("%d\n", mc_lv.vertices.size());
-		//mc_lv.exportObj("Sphere_level_vec");
+		mc_lv.exportObj("Sphere_level_vec");
 
 		// Level-by-level vectorization timing
 		void (MarchingCubes:: * ptr_update_level_vec)(float) = &MarchingCubes::update_level_vec;
