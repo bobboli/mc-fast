@@ -111,7 +111,7 @@ int main(int argc, char** argv)
 		SetRandom(mc_lv);
 		mc_lv.update_level_vec(radius);
 		printf("%d\n", mc_lv.vertices.size());
-		mc_lv.exportObj("Sphere_level_vec");
+		//mc_lv.exportObj("Sphere_level_vec");
 
 		// Level-by-level vectorization timing
 		void (MarchingCubes:: * ptr_update_level_vec)(float) = &MarchingCubes::update_level_vec;
