@@ -20,8 +20,6 @@ void MarchingCubes::setup(int resX, int resY, int resZ)
 
 	setResolution(resX, resY, resZ);
 
-	vertexCount = 0;
-
 
 	// Trick: make them all same size so it's easy to calculate offsets
 	vertIndexX = new int[sy1 * sz1 * 5];
@@ -63,7 +61,6 @@ void MarchingCubes::update(float _threshold){
 		
 		//std::fill( normalVals.begin(), normalVals.end(), Vector3f());
 		//std::fill( gridPointComputed.begin(), gridPointComputed.end(), 0 );
-		vertexCount = 0;
 		for (int x = 0; x < resX - 1; x++) {
 			for (int y = 0; y < resY - 1; y++) {
 				for (int z = 0; z < resZ - 1; z++) {
@@ -78,8 +75,6 @@ void MarchingCubes::update_level(float _threshold)
 {
 	threshold = _threshold;
 
-	vertexCount = 0;
-
 	for (int x = 0; x < sx; ++x)
 	{
 		polygonise_level(x);
@@ -91,7 +86,6 @@ void MarchingCubes::update_level(float _threshold)
 void MarchingCubes::count_ops(float _threshold, operation_counts& counts) {
 	threshold = _threshold;
 
-	vertexCount = 0;
 	for (int x = 0; x < resX; x++) {
 		for (int y = 0; y < resY; y++) {
 			for (int z = 0; z < resZ; z++) {
@@ -174,7 +168,7 @@ void MarchingCubes::polygonise(int i, int j, int k){
 			vertices.push_back(vertList[triTable[cubeindex][i]]);
 			vertices.push_back(vertList[triTable[cubeindex][i+1]]);
 			vertices.push_back(vertList[triTable[cubeindex][i+2]]);
-			vertexCount += 3;
+		
 		}
 	//}
 	//else if(!beenWarned){
@@ -415,7 +409,6 @@ void MarchingCubes::polygonise_level(int level)
 					int idx = base + offsetLookUp[val + (level & 1) * 12];
 					int vertIndex = vertIndexX[idx];
 					indices.push_back(vertIndex);
-					++vertexCount;
 				}
 			}
 		}
@@ -818,7 +811,6 @@ void MarchingCubes::polygonise_level_vec(int level)
 						int idx = base + offsetLookUp[val + (level & 1) * 12];
 						int vertIndex = vertIndexX[idx];
 						indices.push_back(vertIndex);
-						++vertexCount;
 					}
 				}
 			}
@@ -1081,7 +1073,6 @@ void MarchingCubes::polygonise_level_vec(int level)
 						int idx = base + offsetLookUp[val + (level & 1) * 12];
 						int vertIndex = vertIndexX[idx];
 						indices.push_back(vertIndex);
-						++vertexCount;
 					}
 				}
 			}
@@ -1136,8 +1127,6 @@ void MarchingCubes::polygonise_count_ops(int i, int j, int k, operation_counts& 
 		/*vertices[vertexCount] = vertList[triTable[cubeindex][i]];
 		vertices[vertexCount + 1] = vertList[triTable[cubeindex][i + 1]];
 		vertices[vertexCount + 2] = vertList[triTable[cubeindex][i + 2]];*/
-
-		vertexCount += 3;
 	}
 }
 
@@ -1517,7 +1506,7 @@ void MarchingCubes::exportObj( string fileName ){
 	//this only works for triangulated meshes
 	if (indices.empty())
 	{
-		for (int i = 0; i < vertexCount; i += 3)
+		for (int i = 0; i < vertices.size(); i += 3)
 		{
 			outfile << "f ";
 			for (int j = 0; j < 3; j++)

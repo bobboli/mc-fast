@@ -89,8 +89,6 @@ public:
 	{
 		threshold = _threshold;
 
-		vertexCount = 0;
-
 		for (int x = 0; x < sx; ++x)
 		{
 			polygonise_level_vec(x);
@@ -167,7 +165,6 @@ public:
 	vector<Vector3f> vertices;
 	vector<Vector3f> normals;
 	vector<int> indices;
-	int vertexCount;
 
 
 	Vector3f vertList[12], normList[12];
