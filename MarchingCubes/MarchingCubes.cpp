@@ -115,69 +115,83 @@ void MarchingCubes::polygonise(int i, int j, int k){
 		 */
 		int cubeindex = 0;
 		int i1 = i + 1, j1 = j + 1, k1 = k + 1;
-		cubeindex |= getIsoValue(i,j,k) > threshold ?   1 : 0;
-		cubeindex |= getIsoValue(i1,j,k) > threshold ?   2 : 0;
-		cubeindex |= getIsoValue(i1,j1,k) > threshold ?   4 : 0;
-		cubeindex |= getIsoValue(i,j1,k) > threshold ?   8 : 0;
-		cubeindex |= getIsoValue(i,j,k1) > threshold ?  16 : 0;
-		cubeindex |= getIsoValue(i1,j,k1) > threshold ?  32 : 0;
-		cubeindex |= getIsoValue(i1,j1,k1) > threshold ?  64 : 0;
-		cubeindex |= getIsoValue(i,j1,k1) > threshold ? 128 : 0;
+		polygonise_stage1(cubeindex, i, j, k, i1, j1, k1);
+
 		
 		/* Cube is entirely in/out of the surface */
 		if (edgeTable[cubeindex] == 0)		return;
 		
 		/* Find the vertices where the surface intersects the cube */
 		
-		if (edgeTable[cubeindex] & 1)		vertexInterp(threshold, i,j,k, i1,j,k, vertList[0], normList[0]);
-		if (edgeTable[cubeindex] & 2)		vertexInterp(threshold, i1,j,k, i1,j1,k, vertList[1], normList[1]);
-		if (edgeTable[cubeindex] & 4)		vertexInterp(threshold, i1,j1,k, i,j1,k, vertList[2], normList[2]);
-		if (edgeTable[cubeindex] & 8)		vertexInterp(threshold, i,j1,k, i,j,k, vertList[3], normList[3]);
-		if (edgeTable[cubeindex] & 16)		vertexInterp(threshold, i,j,k1, i1,j,k1, vertList[4], normList[4]);
-		if (edgeTable[cubeindex] & 32)		vertexInterp(threshold, i1,j,k1, i1,j1,k1, vertList[5], normList[5]);
-		if (edgeTable[cubeindex] & 64)		vertexInterp(threshold, i1,j1,k1, i,j1,k1, vertList[6], normList[6]);
-		if (edgeTable[cubeindex] & 128)		vertexInterp(threshold, i,j1,k1, i,j,k1, vertList[7], normList[7]);
-		if (edgeTable[cubeindex] & 256)		vertexInterp(threshold, i,j,k, i,j,k1, vertList[8], normList[8]);
-		if (edgeTable[cubeindex] & 512)		vertexInterp(threshold, i1,j,k, i1,j,k1, vertList[9], normList[9]);
-		if (edgeTable[cubeindex] & 1024)	vertexInterp(threshold, i1,j1,k, i1,j1,k1, vertList[10], normList[10]);
-		if (edgeTable[cubeindex] & 2048)	vertexInterp(threshold, i,j1,k, i,j1,k1, vertList[11], normList[11]);
+		polygonise_stage2(cubeindex, i, j, k, i1, j1, k1);
 
-		for (i=0;triTable[cubeindex][i]!=-1;i+=3) {
-			//if(bSmoothed){
-			//	//smoothed normals
-			//	normals[vertexCount] = normList[triTable[cubeindex][i]];
-			//	normals[vertexCount+1] = normList[triTable[cubeindex][i+1]];
-			//	normals[vertexCount+2] = normList[triTable[cubeindex][i+2]];
-			//	
-			//}
-			//else{
-			//	//faceted
-			//	Vector3f a = vertList[triTable[cubeindex][i+1]] - vertList[triTable[cubeindex][i]];
-			//	Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
-			//	
-			//	normals[vertexCount] = normals[vertexCount+1] = normals[vertexCount+2] = a.crossed(b).normalize() * flipNormalsValue;
-			//}
 
-			// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
-			// Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
+		polygonise_stage3(i, cubeindex);
 
-			//vertices[vertexCount++] = vertList[triTable[cubeindex][i]];
-			//vertices[vertexCount++] = vertList[triTable[cubeindex][i+1]];
-			//vertices[vertexCount++] = vertList[triTable[cubeindex][i+2]];
-
-			vertices.push_back(vertList[triTable[cubeindex][i]]);
-			vertices.push_back(vertList[triTable[cubeindex][i+1]]);
-			vertices.push_back(vertList[triTable[cubeindex][i+2]]);
-		
-		}
-	//}
-	//else if(!beenWarned){
-	//	std::cerr << "ofxMarhingCubes: maximum vertex("+to_string(maxVertexCount)+") count exceded. try increasing the maxVertexCount with setMaxVertexCount()";
-	//	beenWarned = true;
-	//}
 }
 
 
+
+void MarchingCubes::polygonise_stage3(int i, int cubeindex)
+{
+	for (i = 0; triTable[cubeindex][i] != -1; i += 3)
+	{
+		//if(bSmoothed){
+		//	//smoothed normals
+		//	normals[vertexCount] = normList[triTable[cubeindex][i]];
+		//	normals[vertexCount+1] = normList[triTable[cubeindex][i+1]];
+		//	normals[vertexCount+2] = normList[triTable[cubeindex][i+2]];
+		//	
+		//}
+		//else{
+		//	//faceted
+		//	Vector3f a = vertList[triTable[cubeindex][i+1]] - vertList[triTable[cubeindex][i]];
+		//	Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
+		//	
+		//	normals[vertexCount] = normals[vertexCount+1] = normals[vertexCount+2] = a.crossed(b).normalize() * flipNormalsValue;
+		//}
+
+		// Vector3f a = vertList[triTable[cubeindex][i + 1]] - vertList[triTable[cubeindex][i]];
+		// Vector3f b = vertList[triTable[cubeindex][i+2]] - vertList[triTable[cubeindex][i+1]];
+
+		//vertices[vertexCount++] = vertList[triTable[cubeindex][i]];
+		//vertices[vertexCount++] = vertList[triTable[cubeindex][i+1]];
+		//vertices[vertexCount++] = vertList[triTable[cubeindex][i+2]];
+
+		vertices.push_back(vertList[triTable[cubeindex][i]]);
+		vertices.push_back(vertList[triTable[cubeindex][i + 1]]);
+		vertices.push_back(vertList[triTable[cubeindex][i + 2]]);
+
+	}
+}
+
+void MarchingCubes::polygonise_stage2(int cubeindex, int i, int j, int k, int i1, int j1, int k1)
+{
+	if (edgeTable[cubeindex] & 1)		vertexInterp(threshold, i, j, k, i1, j, k, vertList[0], normList[0]);
+	if (edgeTable[cubeindex] & 2)		vertexInterp(threshold, i1, j, k, i1, j1, k, vertList[1], normList[1]);
+	if (edgeTable[cubeindex] & 4)		vertexInterp(threshold, i1, j1, k, i, j1, k, vertList[2], normList[2]);
+	if (edgeTable[cubeindex] & 8)		vertexInterp(threshold, i, j1, k, i, j, k, vertList[3], normList[3]);
+	if (edgeTable[cubeindex] & 16)		vertexInterp(threshold, i, j, k1, i1, j, k1, vertList[4], normList[4]);
+	if (edgeTable[cubeindex] & 32)		vertexInterp(threshold, i1, j, k1, i1, j1, k1, vertList[5], normList[5]);
+	if (edgeTable[cubeindex] & 64)		vertexInterp(threshold, i1, j1, k1, i, j1, k1, vertList[6], normList[6]);
+	if (edgeTable[cubeindex] & 128)		vertexInterp(threshold, i, j1, k1, i, j, k1, vertList[7], normList[7]);
+	if (edgeTable[cubeindex] & 256)		vertexInterp(threshold, i, j, k, i, j, k1, vertList[8], normList[8]);
+	if (edgeTable[cubeindex] & 512)		vertexInterp(threshold, i1, j, k, i1, j, k1, vertList[9], normList[9]);
+	if (edgeTable[cubeindex] & 1024)	vertexInterp(threshold, i1, j1, k, i1, j1, k1, vertList[10], normList[10]);
+	if (edgeTable[cubeindex] & 2048)	vertexInterp(threshold, i, j1, k, i, j1, k1, vertList[11], normList[11]);
+}
+
+void MarchingCubes::polygonise_stage1(int& cubeindex, int i, int j, int k, int i1, int j1, int k1)
+{
+	cubeindex |= getIsoValue(i, j, k) > threshold ? 1 : 0;
+	cubeindex |= getIsoValue(i1, j, k) > threshold ? 2 : 0;
+	cubeindex |= getIsoValue(i1, j1, k) > threshold ? 4 : 0;
+	cubeindex |= getIsoValue(i, j1, k) > threshold ? 8 : 0;
+	cubeindex |= getIsoValue(i, j, k1) > threshold ? 16 : 0;
+	cubeindex |= getIsoValue(i1, j, k1) > threshold ? 32 : 0;
+	cubeindex |= getIsoValue(i1, j1, k1) > threshold ? 64 : 0;
+	cubeindex |= getIsoValue(i, j1, k1) > threshold ? 128 : 0;
+}
 
 void MarchingCubes::polygonise_level(int level)
 {
@@ -218,67 +232,44 @@ void MarchingCubes::polygonise_level(int level)
 	int x = level;
 	int x1 = x + 1;
 
-	// Threshold computing
-	if (level == 0)
+
+	polygonise_level_stage1(level, thresCmpOld, x1, thresCmpNew);
+
+
+	polygonise_level_stage2(level, vertIndexZOld, vertIndexYOld, x, vertIndexZNew, vertIndexYNew);
+
+
+	polygonise_level_stage3(level);
+
+}
+
+
+void MarchingCubes::polygonise_level_stage3(int level)
+{
+	// Assembly triangles
+	for (int y = 0; y < sy; ++y)
 	{
-		int iGrid = 0;
-		for (int y = 0; y < sy1; ++y)
+		for (int z = 0; z < sz; ++z)
 		{
-			for (int z = 0; z < sz1; ++z)
+			int iCube = y * sz + z;
+			int base = iCube + y; // y * sz1 + z;
+			int* triTableEntry = triTable[cubeIndexLevel[iCube]];
+			for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
 			{
-				thresCmpOld[iGrid] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
-				++iGrid;
+				for (int tj = 0; tj < 3; tj++)
+				{
+					int val = triTable[cubeIndexLevel[iCube]][ti + tj];
+					int idx = base + offsetLookUp[val + (level & 1) * 12];
+					int vertIndex = vertIndexX[idx];
+					indices.push_back(vertIndex);
+				}
 			}
 		}
 	}
+}
 
-	{
-		int iGrid = 0;
-		int iIsoVal = x1*sy1*sz1;
-		for (int y = 0; y < sy1; ++y)
-		{
-			for (int z = 0; z < sz1; ++z)
-			{
-				thresCmpNew[iGrid] = getIsoValue(x1, y, z) > threshold;// isoVals[iIsoVal] > threshold;
-				//if (level == 0)  // It seems that you would rather iterate over y and z once more like above, than using a nested if here
-				//{
-				//	thresCmpOld[iGrid] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
-				//}
-				++iGrid;
-				++iIsoVal;
-			}
-		}
-	}
-
-	// Cube index computation
-	{
-		int iCube = 0;
-		for (int y = 0; y < sy; ++y)
-		{
-			int y1 = y + 1;
-			for (int z = 0; z < sz; ++z)
-			{
-				int z1 = z + 1;
-
-				int cubeIndexOld = 0;
-				int cubeIndexNew = 0;
-				int base = y * sz1 + z;
-				// todo: accessing of isoVals could be further optimized without using getIsoValue
-				int thresCmpOld0 = thresCmpOld[base];
-				int thresCmpNew0 = thresCmpNew[base];
-				int thresCmpOld1 = thresCmpNew[base + sz1];
-				int thresCmpNew1 = thresCmpOld[base + sz1];
-				int thresCmpOld2 = thresCmpOld[base + 1];
-				int thresCmpNew2 = thresCmpNew[base + 1];
-				int thresCmpOld3 = thresCmpNew[base + sz1 + 1];
-				int thresCmpNew3 = thresCmpOld[base + sz1 + 1];
-				cubeIndexOld |= thresCmpOld0 | (thresCmpOld1 << 2) | (thresCmpOld2 << 4) | (thresCmpOld3 << 6);
-				cubeIndexNew |= (thresCmpNew0 << 1) | (thresCmpNew1 << 3) | (thresCmpNew2 << 5) | (thresCmpNew3 << 7);
-				cubeIndexLevel[iCube++] = cubeIndexOld | cubeIndexNew;
-			}
-		}
-	}
-
+void MarchingCubes::polygonise_level_stage2(int level, int* vertIndexZOld, int* vertIndexYOld, int x, int* vertIndexZNew, int* vertIndexYNew)
+{
 	// Vertex interpolation
 	Vector3f dummyN;
 	Vector3f vert;  // todo: use multiple variables to increase ILP?
@@ -345,7 +336,7 @@ void MarchingCubes::polygonise_level(int level)
 			{
 				vertIndexX[z + 1] = vertices.size();
 				vertexInterp_X(threshold, x, x + 1, 0, z + 1, vert, dummyN);
-				vertices.push_back(vert);	
+				vertices.push_back(vert);
 			}
 			if (edgeTable[cubeIndexLevel[z]] & 512)
 			{
@@ -399,44 +390,85 @@ void MarchingCubes::polygonise_level(int level)
 				}
 
 				// Assembly triangles
-				int base = iCube + y; // y * sz1 + z;
-				int cnt = triTableCount[cubeIndex];
-				int* triTableEntry = triTable[cubeIndex];
-				// for (int i = 0; triTableEntry[i] != -1; ++i)
-				for (int i = 0; i < cnt; ++i)
-				{
-					int val = triTableEntry[i];
-					int idx = base + offsetLookUp[val + (level & 1) * 12];
-					int vertIndex = vertIndexX[idx];
-					indices.push_back(vertIndex);
-				}
+				//int base = iCube + y; // y * sz1 + z;
+				//int cnt = triTableCount[cubeIndex];
+				//int* triTableEntry = triTable[cubeIndex];
+				//// for (int i = 0; triTableEntry[i] != -1; ++i)
+				//for (int i = 0; i < cnt; ++i)
+				//{
+				//	int val = triTableEntry[i];
+				//	int idx = base + offsetLookUp[val + (level & 1) * 12];
+				//	int vertIndex = vertIndexX[idx];
+				//	indices.push_back(vertIndex);
+				//}
+			}
+		}
+	}
+}
+
+void MarchingCubes::polygonise_level_stage1(int level, bool* thresCmpOld, int x1, bool* thresCmpNew)
+{
+	// Threshold computing
+	if (level == 0)
+	{
+		int iGrid = 0;
+		for (int y = 0; y < sy1; ++y)
+		{
+			for (int z = 0; z < sz1; ++z)
+			{
+				thresCmpOld[iGrid] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
+				++iGrid;
 			}
 		}
 	}
 
-	// Assembly triangles
-	//for (int y = 0; y < sy; ++y)
-	//{
-	//	for (int z = 0; z < sz; ++z)
-	//	{
-	//		int iCube = y * sz + z;
-	//		int base = iCube + y; // y * sz1 + z;
-	//		int *triTableEntry = triTable[cubeIndexLevel[iCube]];
-	//		for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
-	//		{
-	//			for (int tj = 0; tj < 3; tj++)
-	//			{
-	//				int val = triTable[cubeIndexLevel[iCube]][ti + tj];
-	//				int idx = base + offsetLookUp[val + (level & 1) * 12];
-	//				int vertIndex = vertIndexX[idx];
-	//				indices.push_back(vertIndex);
-	//				++vertexCount;
-	//			}
-	//		}
-	//	}
-	//}
-}
+	{
+		int iGrid = 0;
+		int iIsoVal = x1 * sy1 * sz1;
+		for (int y = 0; y < sy1; ++y)
+		{
+			for (int z = 0; z < sz1; ++z)
+			{
+				thresCmpNew[iGrid] = getIsoValue(x1, y, z) > threshold;// isoVals[iIsoVal] > threshold;
+				//if (level == 0)  // It seems that you would rather iterate over y and z once more like above, than using a nested if here
+				//{
+				//	thresCmpOld[iGrid] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
+				//}
+				++iGrid;
+				++iIsoVal;
+			}
+		}
+	}
 
+	// Cube index computation
+	{
+		int iCube = 0;
+		for (int y = 0; y < sy; ++y)
+		{
+			int y1 = y + 1;
+			for (int z = 0; z < sz; ++z)
+			{
+				int z1 = z + 1;
+
+				int cubeIndexOld = 0;
+				int cubeIndexNew = 0;
+				int base = y * sz1 + z;
+				// todo: accessing of isoVals could be further optimized without using getIsoValue
+				int thresCmpOld0 = thresCmpOld[base];
+				int thresCmpNew0 = thresCmpNew[base];
+				int thresCmpOld1 = thresCmpNew[base + sz1];
+				int thresCmpNew1 = thresCmpOld[base + sz1];
+				int thresCmpOld2 = thresCmpOld[base + 1];
+				int thresCmpNew2 = thresCmpNew[base + 1];
+				int thresCmpOld3 = thresCmpNew[base + sz1 + 1];
+				int thresCmpNew3 = thresCmpOld[base + sz1 + 1];
+				cubeIndexOld |= thresCmpOld0 | (thresCmpOld1 << 2) | (thresCmpOld2 << 4) | (thresCmpOld3 << 6);
+				cubeIndexNew |= (thresCmpNew0 << 1) | (thresCmpNew1 << 3) | (thresCmpNew2 << 5) | (thresCmpNew3 << 7);
+				cubeIndexLevel[iCube++] = cubeIndexOld | cubeIndexNew;
+			}
+		}
+	}
+}
 
 void MarchingCubes::polygonise_level_vec(int level)
 {
@@ -477,115 +509,41 @@ void MarchingCubes::polygonise_level_vec(int level)
 	int x = level;
 	int x1 = x + 1;
 
-	__m256 vt = _mm256_set1_ps(threshold);
-	__m256 c1 = _mm256_set1_ps(1);
-	int DX = sz1 * sy1, DY = sz1;
+	polygonise_level_vec_stage1(level, thresCmpOld, x1, thresCmpNew);
 
-	// Threshold computing
-	if (level == 0)
+	polygonise_level_vec_stage2(level, vertIndexZOld, vertIndexYOld, x, vertIndexZNew, vertIndexYNew);
+
+	polygonise_level_vec_stage3(level);
+
+
+}
+
+void MarchingCubes::polygonise_level_vec_stage3(int level)
+{
+	// Assembly triangles
+	for (int y = 0; y < sy; ++y)
 	{
-		for (int y = 0; y < sy1; ++y)
+		for (int z = 0; z < sz; ++z)
 		{
-			int z;
-			for (z = 0; z < sz1 - 7; z += 8)
+			int iCube = y * sz + z;
+			int base = iCube + y; // y * sz1 + z;
+			int* triTableEntry = triTable[cubeIndexLevel[iCube]];
+			for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
 			{
-				int idx = y * DY + z;
-				__m256 vals = _mm256_loadu_ps(isoVals + idx);
-				__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
-				__m256 res = _mm256_and_ps(cmp, c1);
-				_mm256_storeu_epi32(thresCmpOld + idx, _mm256_cvtps_epi32(res));
-			}
-			for (; z < sz1; ++z)
-			{
-				int idx = y * DY + z;
-				thresCmpOld[idx] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
+				for (int tj = 0; tj < 3; tj++)
+				{
+					int val = triTable[cubeIndexLevel[iCube]][ti + tj];
+					int idx = base + offsetLookUp[val + (level & 1) * 12];
+					int vertIndex = vertIndexX[idx];
+					indices.push_back(vertIndex);
+				}
 			}
 		}
 	}
+}
 
-	{
-		int base = x1 * DX;
-		for (int y = 0; y < sy1; ++y)
-		{
-			int z;
-			for (z = 0; z < sz1 - 7; z += 8)
-			{
-				int idx = base + y * DY + z;
-				int level_idx = y * DY + z;
-
-				__m256 vals = _mm256_loadu_ps(isoVals + idx);
-				__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
-				__m256 res = _mm256_and_ps(cmp, c1);
-				_mm256_storeu_epi32(thresCmpNew + level_idx, _mm256_cvtps_epi32(res));
-			}
-			for (; z < sz1; ++z)
-			{
-				int idx = y * DY + z;
-				thresCmpNew[idx] = getIsoValue(x1, y, z) > threshold;//isoVals[iGrid] > threshold;
-			}
-		}
-	}
-
-	// Cube index computation
-	{
-		for (int y = 0; y < sy; ++y)
-		{
-			int y1 = y + 1;
-			int z = 0;
-			for (z = 0; z < sz - 7; z += 8)
-			{
-				int base = y * DY + z;
-				int idx = y * sz + z;
-				__m256i b_000 = _mm256_loadu_epi32(thresCmpOld + base);
-				__m256i b_001 = _mm256_loadu_epi32(thresCmpOld + base + 1);
-				__m256i b_010 = _mm256_loadu_epi32(thresCmpOld + base + DY);
-				__m256i b_011 = _mm256_loadu_epi32(thresCmpOld + base + DY + 1);
-				__m256i b_100 = _mm256_loadu_epi32(thresCmpNew + base);
-				__m256i b_101 = _mm256_loadu_epi32(thresCmpNew + base + 1);
-				__m256i b_110 = _mm256_loadu_epi32(thresCmpNew + base + DY);
-				__m256i b_111 = _mm256_loadu_epi32(thresCmpNew + base + DY + 1);
-				__m256i bs_100 = _mm256_slli_epi32(b_100, 1);
-				__m256i bs_110 = _mm256_slli_epi32(b_110, 2);
-				__m256i bs_010 = _mm256_slli_epi32(b_010, 3);
-				__m256i bs_001 = _mm256_slli_epi32(b_001, 4);
-				__m256i bs_101 = _mm256_slli_epi32(b_101, 5);
-				__m256i bs_111 = _mm256_slli_epi32(b_111, 6);
-				__m256i bs_011 = _mm256_slli_epi32(b_011, 7);
-				__m256i cube_index = _mm256_set1_epi32(0);
-				cube_index = _mm256_add_epi32(cube_index, b_000);
-				cube_index = _mm256_add_epi32(cube_index, bs_001);
-				cube_index = _mm256_add_epi32(cube_index, bs_010);
-				cube_index = _mm256_add_epi32(cube_index, bs_011);
-				cube_index = _mm256_add_epi32(cube_index, bs_100);
-				cube_index = _mm256_add_epi32(cube_index, bs_101);
-				cube_index = _mm256_add_epi32(cube_index, bs_110);
-				cube_index = _mm256_add_epi32(cube_index, bs_111);
-				_mm256_storeu_epi32(cubeIndexLevel + idx, cube_index);
-			}
-
-			for(; z < sz; ++z)
-			{
-				int z1 = z + 1;
-				int idx = sz * y + z;
-				int cubeIndexOld = 0;
-				int cubeIndexNew = 0;
-				int base = y * sz1 + z;
-				// todo: accessing of isoVals could be further optimized without using getIsoValue
-				int thresCmpOld0 = thresCmpOld[base];
-				int thresCmpNew0 = thresCmpNew[base];
-				int thresCmpOld1 = thresCmpNew[base + sz1];
-				int thresCmpNew1 = thresCmpOld[base + sz1];
-				int thresCmpOld2 = thresCmpOld[base + 1];
-				int thresCmpNew2 = thresCmpNew[base + 1];
-				int thresCmpOld3 = thresCmpNew[base + sz1 + 1];
-				int thresCmpNew3 = thresCmpOld[base + sz1 + 1];
-				cubeIndexOld |= thresCmpOld0 | (thresCmpOld1 << 2) | (thresCmpOld2 << 4) | (thresCmpOld3 << 6);
-				cubeIndexNew |= (thresCmpNew0 << 1) | (thresCmpNew1 << 3) | (thresCmpNew2 << 5) | (thresCmpNew3 << 7);
-				cubeIndexLevel[idx] = cubeIndexOld | cubeIndexNew;
-			}
-		}
-	}
-
+void MarchingCubes::polygonise_level_vec_stage2(int level, int* vertIndexZOld, int* vertIndexYOld, int x, int* vertIndexZNew, int* vertIndexYNew)
+{
 	// Vertex interpolation
 	Vector3f dummyN;
 	Vector3f vert;  // todo: use multiple variables to increase ILP?
@@ -710,10 +668,10 @@ void MarchingCubes::polygonise_level_vec(int level)
 			}
 
 			// todo: edgeIndex could be stored using short (16bit)? 
-			
+
 			{
 				int zz = 0;
-				for (; zz < sz - 7; zz+= 8)
+				for (; zz < sz - 7; zz += 8)
 				{
 					__m256i edgeIndices = _mm256_load_si256((__m256i*) (edgeIndexArray + zz));
 					__m256i mask = _mm256_and_si256(edgeIndices, c64);
@@ -737,7 +695,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 					}
 				}
 			}
-			
+
 			/*
 			for (int z = 0; z < sz; ++z)
 			{
@@ -748,8 +706,8 @@ void MarchingCubes::polygonise_level_vec(int level)
 				}
 			}
 			*/
-			
-			
+
+
 			{
 				int zz = 0;
 				for (; zz < sz - 7; zz += 8)
@@ -776,7 +734,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 					}
 				}
 			}
-			
+
 
 			/*
 			for (int z = 0; z < sz; ++z)
@@ -789,7 +747,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 			}
 			*/
 
-			
+
 			for (int z = 0; z < sz; ++z)
 			{
 				if (edgeIndexArray[z] & 1024)
@@ -825,7 +783,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 		// Second pass: Interpolate vertices and assemble triangles.
 		vertices.resize(curNumVertices);
 
-		#if 0
+	#if 0
 		// Non-SIMD vertex interpolation.
 		for (int y = 0; y < sy; ++y)
 		{
@@ -856,7 +814,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 		}
 
 
-		#else
+	#else
 		__m256 cdx = _mm256_set1_ps(dx);
 		__m256 cdy = _mm256_set1_ps(dy);
 		__m256 cdz = _mm256_set1_ps(dz);
@@ -872,9 +830,9 @@ void MarchingCubes::polygonise_level_vec(int level)
 		{
 			float vert_y1 = dy * y;
 			float vert_y2 = vert_y1 + dy;
-			int basex = x * DX + (y+1) * DY;
-			int basey = (x+1) * DX + y * DY;
-			int basez = (x+1) * DX + (y+1) * DY;
+			int basex = x * DX + (y + 1) * DY;
+			int basey = (x + 1) * DX + y * DY;
+			int basez = (x + 1) * DX + (y + 1) * DY;
 			__m256 p1y = _mm256_mul_ps(cdy, _mm256_set1_ps(y));
 
 			// Interpolate vertices on Edge X. 
@@ -916,7 +874,7 @@ void MarchingCubes::polygonise_level_vec(int level)
 						vertices[oldNumVertices++] = vert;
 						continue;
 					}
-										
+
 					vert.x = px.m256_f32[j];
 					vertices[oldNumVertices++] = vert;
 				}
@@ -1031,9 +989,9 @@ void MarchingCubes::polygonise_level_vec(int level)
 				vertexInterp_Z(threshold, x + 1, y + 1, z, z + 1, vert, dummyN);
 				vertices[oldNumVertices++] = vert;
 			}
-		}
+	}
 
-		#endif
+	#endif
 
 	#else
 		for (int y = 0; y < sy; ++y)
@@ -1063,22 +1021,134 @@ void MarchingCubes::polygonise_level_vec(int level)
 				}
 
 				// Assembly triangles
-				int base = iCube + y; // y * sz1 + z;
-				int* triTableEntry = triTable[cubeIndex];
-				for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
-				{
-					for (int tj = 0; tj < 3; tj++)
-					{
-						int val = triTable[cubeIndex][ti + tj];
-						int idx = base + offsetLookUp[val + (level & 1) * 12];
-						int vertIndex = vertIndexX[idx];
-						indices.push_back(vertIndex);
-					}
-				}
+				//int base = iCube + y; // y * sz1 + z;
+				//int* triTableEntry = triTable[cubeIndex];
+				//for (int ti = 0; triTableEntry[ti] != -1; ti += 3)
+				//{
+				//	for (int tj = 0; tj < 3; tj++)
+				//	{
+				//		int val = triTable[cubeIndex][ti + tj];
+				//		int idx = base + offsetLookUp[val + (level & 1) * 12];
+				//		int vertIndex = vertIndexX[idx];
+				//		indices.push_back(vertIndex);
+				//	}
+				//}
 			}
 		}
 
 	#endif
+}
+}
+
+void MarchingCubes::polygonise_level_vec_stage1(int level, int* thresCmpOld, int x1, int* thresCmpNew)
+{
+	__m256 vt = _mm256_set1_ps(threshold);
+	__m256 c1 = _mm256_set1_ps(1);
+	int DX = sz1 * sy1, DY = sz1;
+
+	// Threshold computing
+	if (level == 0)
+	{
+		for (int y = 0; y < sy1; ++y)
+		{
+			int z;
+			for (z = 0; z < sz1 - 7; z += 8)
+			{
+				int idx = y * DY + z;
+				__m256 vals = _mm256_loadu_ps(isoVals + idx);
+				__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
+				__m256 res = _mm256_and_ps(cmp, c1);
+				_mm256_storeu_epi32(thresCmpOld + idx, _mm256_cvtps_epi32(res));
+			}
+			for (; z < sz1; ++z)
+			{
+				int idx = y * DY + z;
+				thresCmpOld[idx] = getIsoValue(0, y, z) > threshold;//isoVals[iGrid] > threshold;
+			}
+		}
+	}
+
+	{
+		int base = x1 * DX;
+		for (int y = 0; y < sy1; ++y)
+		{
+			int z;
+			for (z = 0; z < sz1 - 7; z += 8)
+			{
+				int idx = base + y * DY + z;
+				int level_idx = y * DY + z;
+
+				__m256 vals = _mm256_loadu_ps(isoVals + idx);
+				__m256 cmp = _mm256_cmp_ps(vals, vt, _CMP_GT_OQ);
+				__m256 res = _mm256_and_ps(cmp, c1);
+				_mm256_storeu_epi32(thresCmpNew + level_idx, _mm256_cvtps_epi32(res));
+			}
+			for (; z < sz1; ++z)
+			{
+				int idx = y * DY + z;
+				thresCmpNew[idx] = getIsoValue(x1, y, z) > threshold;//isoVals[iGrid] > threshold;
+			}
+		}
+	}
+
+	// Cube index computation
+	{
+		for (int y = 0; y < sy; ++y)
+		{
+			int y1 = y + 1;
+			int z = 0;
+			for (z = 0; z < sz - 7; z += 8)
+			{
+				int base = y * DY + z;
+				int idx = y * sz + z;
+				__m256i b_000 = _mm256_loadu_epi32(thresCmpOld + base);
+				__m256i b_001 = _mm256_loadu_epi32(thresCmpOld + base + 1);
+				__m256i b_010 = _mm256_loadu_epi32(thresCmpOld + base + DY);
+				__m256i b_011 = _mm256_loadu_epi32(thresCmpOld + base + DY + 1);
+				__m256i b_100 = _mm256_loadu_epi32(thresCmpNew + base);
+				__m256i b_101 = _mm256_loadu_epi32(thresCmpNew + base + 1);
+				__m256i b_110 = _mm256_loadu_epi32(thresCmpNew + base + DY);
+				__m256i b_111 = _mm256_loadu_epi32(thresCmpNew + base + DY + 1);
+				__m256i bs_100 = _mm256_slli_epi32(b_100, 1);
+				__m256i bs_110 = _mm256_slli_epi32(b_110, 2);
+				__m256i bs_010 = _mm256_slli_epi32(b_010, 3);
+				__m256i bs_001 = _mm256_slli_epi32(b_001, 4);
+				__m256i bs_101 = _mm256_slli_epi32(b_101, 5);
+				__m256i bs_111 = _mm256_slli_epi32(b_111, 6);
+				__m256i bs_011 = _mm256_slli_epi32(b_011, 7);
+				__m256i cube_index = _mm256_set1_epi32(0);
+				cube_index = _mm256_add_epi32(cube_index, b_000);
+				cube_index = _mm256_add_epi32(cube_index, bs_001);
+				cube_index = _mm256_add_epi32(cube_index, bs_010);
+				cube_index = _mm256_add_epi32(cube_index, bs_011);
+				cube_index = _mm256_add_epi32(cube_index, bs_100);
+				cube_index = _mm256_add_epi32(cube_index, bs_101);
+				cube_index = _mm256_add_epi32(cube_index, bs_110);
+				cube_index = _mm256_add_epi32(cube_index, bs_111);
+				_mm256_storeu_epi32(cubeIndexLevel + idx, cube_index);
+			}
+
+			for (; z < sz; ++z)
+			{
+				int z1 = z + 1;
+				int idx = sz * y + z;
+				int cubeIndexOld = 0;
+				int cubeIndexNew = 0;
+				int base = y * sz1 + z;
+				// todo: accessing of isoVals could be further optimized without using getIsoValue
+				int thresCmpOld0 = thresCmpOld[base];
+				int thresCmpNew0 = thresCmpNew[base];
+				int thresCmpOld1 = thresCmpNew[base + sz1];
+				int thresCmpNew1 = thresCmpOld[base + sz1];
+				int thresCmpOld2 = thresCmpOld[base + 1];
+				int thresCmpNew2 = thresCmpNew[base + 1];
+				int thresCmpOld3 = thresCmpNew[base + sz1 + 1];
+				int thresCmpNew3 = thresCmpOld[base + sz1 + 1];
+				cubeIndexOld |= thresCmpOld0 | (thresCmpOld1 << 2) | (thresCmpOld2 << 4) | (thresCmpOld3 << 6);
+				cubeIndexNew |= (thresCmpNew0 << 1) | (thresCmpNew1 << 3) | (thresCmpNew2 << 5) | (thresCmpNew3 << 7);
+				cubeIndexLevel[idx] = cubeIndexOld | cubeIndexNew;
+			}
+		}
 	}
 }
 

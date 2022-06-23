@@ -107,8 +107,28 @@ public:
 	void flipNormals() { flipNormalsValue *= -1; }
 	void setResolution(int _x = 10, int _y = 10, int _z = 10);
 	void polygonise(int i, int j, int k);
+
+	void polygonise_stage3(int i, int cubeindex);
+
+	void polygonise_stage2(int cubeindex, int i, int j, int k, int i1, int j1, int k1);
+
+	void polygonise_stage1(int& cubeindex, int i, int j, int k, int i1, int j1, int k1);
+
 	void polygonise_level(int level);
+
+	void polygonise_level_stage3(int level);
+
+	void polygonise_level_stage2(int level, int* vertIndexZOld, int* vertIndexYOld, int x, int* vertIndexZNew, int* vertIndexYNew);
+
+	void polygonise_level_stage1(int level, bool* thresCmpOld, int x1, bool* thresCmpNew);
+
 	void polygonise_level_vec(int level);
+
+	void polygonise_level_vec_stage3(int level);
+
+	void polygonise_level_vec_stage2(int level, int* vertIndexZOld, int* vertIndexYOld, int x, int* vertIndexZNew, int* vertIndexYNew);
+
+	void polygonise_level_vec_stage1(int level, int* thresCmpOld, int x1, int* thresCmpNew);
 
 
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
