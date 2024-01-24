@@ -79,33 +79,33 @@ public:
 
 	void setup(int resX = 30, int resY = 20, int resZ = 30);
 	void reset();
-	void update() { update(threshold); }
+
 	void update(float _threshold);
 	void update_vec(float _threshold);
 	void update_level(float _threshold);
-	void update_level() { update_level(threshold); }
 
-	void MarchingCubes::update_level_vec(float _threshold)
-	{
-		threshold = _threshold;
 
-		for (int x = 0; x < sx; ++x)
-		{
-			polygonise_level_vec(x);
-		}
+	void MarchingCubes::update_level_vec(float _threshold);
+	void setIsoValue(int x, int y, int z, float value);
+	float MarchingCubes::getIsoValue(int x, int y, int z);
 
-	}
-	void update_level_vec() { update_level_vec(threshold); }
 
 	void count_ops(float _threshold, operation_counts &counts);
 
-	// void draw( GLenum renderType = GL_TRIANGLES );
-	// void drawWireframe();
-	// void drawArrays( vector<Vector3f>* _vertices, vector<Vector3f>* _normals=NULL );
-	// void drawGrid( bool drawGridPoints=true);
 
-	void flipNormals() { flipNormalsValue *= -1; }
+
 	void setResolution(int _x = 10, int _y = 10, int _z = 10);
+
+	void exportObj(string fileName);
+
+	// Number of grid points in each axis:
+	int resX, resY, resZ;
+
+	vector<Vector3f> vertices;
+	vector<Vector3f> normals;
+	vector<int> indices;
+
+private:
 	void polygonise(int i, int j, int k);
 
 	void polygonise_stage3(int i, int cubeindex);
@@ -133,6 +133,8 @@ public:
 
 	void polygonise_count_ops(int i, int j, int k, operation_counts &counts);
 	void computeNormal(int i, int j, int k);
+	void flipNormals() { flipNormalsValue *= -1; }
+
 	inline void vertexInterp(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
 	inline void vertexInterp_X(float threshold, int x1, int x2, int y, int z, Vector3f &v, Vector3f &n);
 	inline void vertexInterp_Y(float threshold, int x, int y1, int y2, int z, Vector3f &v, Vector3f &n);
@@ -141,22 +143,14 @@ public:
 	void vertexInterp_vec(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, Vector3f &v, Vector3f &n);
 	void vertexInterp_count_ops(float threshold, int i1, int j1, int k1, int i2, int j2, int k2, operation_counts &counts);
 
-	void setIsoValue(int x, int y, int z, float value);
+
 
 	//void encodeIsoValsMorton();
 
 
-	bool getSmoothing() { return bSmoothed; }
-	void setSmoothing(bool _bSmooth) { bSmoothed = _bSmooth; }
 
 
 	void clear(); // deletes all the data. use whip
-
-	inline float MarchingCubes::getIsoValue(int x, int y, int z)
-	{
-		//return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
-		return isoVals[x * resY * resZ + y * resZ + z];
-	}
 
 	//inline float MarchingCubes::getIsoValueMorton(int x, int y, int z)
 	//{
@@ -164,10 +158,7 @@ public:
 	//}
 
 
-	void exportObj(string fileName);
 
-	// Number of grid points in each axis:
-	int resX, resY, resZ;
 	// Number of cubes in each axis, which is 1 less than number of grid points:
 	int resXm1, resYm1, resZm1;
 
@@ -182,17 +173,11 @@ public:
 	int* thresCmpIntArray = nullptr;
 	float* edgeInterpVal = nullptr;
 
-	vector<Vector3f> vertices;
-	vector<Vector3f> normals;
-	vector<int> indices;
-
 
 	Vector3f vertList[12], normList[12];
 
 	float threshold;
-	bool bSmoothed, beenWarned;
 
-	bool bUpdateMesh;
 
 
 	// Level-by-level 

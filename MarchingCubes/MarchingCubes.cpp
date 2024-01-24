@@ -3,7 +3,6 @@
 
 MarchingCubes::MarchingCubes(){
 	threshold = .5;
-	bSmoothed = true;
 	flipNormalsValue = -1;	
 }
 
@@ -108,7 +107,6 @@ void MarchingCubes::count_ops(float _threshold, operation_counts& counts) {
 void MarchingCubes::polygonise(int i, int j, int k){
 	
 	//if( vertexCount+3 < maxVertexCount ){
-		bUpdateMesh = true;
 		/*
 		 Determine the index into the edge table which
 		 tells us which vertices are inside of the surface
@@ -195,8 +193,6 @@ void MarchingCubes::polygonise_stage1(int& cubeindex, int i, int j, int k, int i
 
 void MarchingCubes::polygonise_level(int level)
 {
-
-	bUpdateMesh = true;
 	/*
 	 Determine the index into the edge table which
 	 tells us which vertices are inside of the surface
@@ -472,8 +468,6 @@ void MarchingCubes::polygonise_level_stage1(int level, bool* thresCmpOld, int x1
 
 void MarchingCubes::polygonise_level_vec(int level)
 {
-
-	bUpdateMesh = true;
 	/*
 	 Determine the index into the edge table which
 	 tells us which vertices are inside of the surface
@@ -1459,9 +1453,25 @@ void MarchingCubes::computeNormal( int i, int j, int k ) {
 };
 
 
+void MarchingCubes::update_level_vec(float _threshold)
+{
+	threshold = _threshold;
+
+	for (int x = 0; x < sx; ++x)
+	{
+		polygonise_level_vec(x);
+	}
+
+}
+
 void MarchingCubes::setIsoValue( int x, int y, int z, float value){
 	isoVals[min(sx, x) * resY * resZ + min(sy, y) * resZ + min(sz, z)] = value;
-	bUpdateMesh = true;
+}
+
+float MarchingCubes::getIsoValue(int x, int y, int z)
+{
+	//return isoValsMorton[libmorton::morton3D_32_encode(x, y, z)];
+	return isoVals[x * resY * resZ + y * resZ + z];
 }
 
 //void MarchingCubes::encodeIsoValsMorton()
