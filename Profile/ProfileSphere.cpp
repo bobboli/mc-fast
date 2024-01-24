@@ -4,47 +4,47 @@
 #include "Profile.h"
 #include "SimplexNoise.h"
 
-void SetSphere(MarchingCubes& mc)
-{
-	const int cX = mc.resX / 2;
-	const int cY = mc.resY / 2;
-	const int cZ = mc.resZ / 2;
-	const float scale = 1.0f/min(min(mc.resX, mc.resY), mc.resZ);
-	for (int i = 0; i < mc.resX; i++)
+	void SetSphere(MarchingCubes& mc)
 	{
-		for (int j = 0; j < mc.resY; j++)
+		const int cX = mc.resX / 2;
+		const int cY = mc.resY / 2;
+		const int cZ = mc.resZ / 2;
+		const float scale = 1.0f/min(min(mc.resX, mc.resY), mc.resZ);
+		for (int i = 0; i < mc.resX; i++)
 		{
-			for (int k = 0; k < mc.resZ; k++)
+			for (int j = 0; j < mc.resY; j++)
 			{
-				float val = (i - cX) * (i - cX) + (j - cY) * (j - cY) + (k - cZ) * (k - cZ);
-                val = sqrt(val);
-				val *= scale;
-				mc.setIsoValue(i, j, k, val);
+				for (int k = 0; k < mc.resZ; k++)
+				{
+					float val = (i - cX) * (i - cX) + (j - cY) * (j - cY) + (k - cZ) * (k - cZ);
+					val = sqrt(val);
+					val *= scale;
+					mc.setIsoValue(i, j, k, val);
+				}
 			}
 		}
 	}
-}
 
-void SetRandom(MarchingCubes& mc, float _lo = -1.0, float _hi = 1.0)
-{
-	srand(1);
-	for (int i = 0; i < mc.resX; i++)
+	void SetRandom(MarchingCubes& mc, float _lo = -1.0, float _hi = 1.0)
 	{
-		for (int j = 0; j < mc.resY; j++)
+		srand(1);
+		for (int i = 0; i < mc.resX; i++)
 		{
-			for (int k = 0; k < mc.resZ; k++)
+			for (int j = 0; j < mc.resY; j++)
 			{
-				float freq = 20.0;
-				//float val = _lo + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (_hi - _lo)));
-				float x = 1.0f * i / mc.resX;
-				float y = 1.0f * j / mc.resY;
-				float z = 1.0f * k / mc.resZ;
-				float val = SimplexNoise::noise(freq*x, freq*y, freq*z);
-				mc.setIsoValue(i, j, k, val);
+				for (int k = 0; k < mc.resZ; k++)
+				{
+					float freq = 20.0;
+					//float val = _lo + static_cast<float>(rand()) / (static_cast <float> (RAND_MAX / (_hi - _lo)));
+					float x = 1.0f * i / mc.resX;
+					float y = 1.0f * j / mc.resY;
+					float z = 1.0f * k / mc.resZ;
+					float val = SimplexNoise::noise(freq*x, freq*y, freq*z);
+					mc.setIsoValue(i, j, k, val);
+				}
 			}
 		}
 	}
-}
 
 int main(int argc, char** argv)
 {
